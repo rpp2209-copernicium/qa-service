@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "npx nodemon ./server/index.js --watch",
-    "test": "jest ./__tests__ --watch"
+    "test": "jest ./__tests__ --watch",
+    "get-rows": "node ./db/utils/get-rows.js",
+    "db-seed": "node ./db/utils/etl.js --watch"
   },
   "repository": {
     "type": "git",
@@ -24,6 +26,8 @@
     "mongoose": "^6.10.0"
   },
   "devDependencies": {
+    "csvtojson": "^2.0.10",
+    "fs": "^0.0.1-security",
     "jest": "^29.4.3",
     "nodemon": "^2.0.20"
   }
