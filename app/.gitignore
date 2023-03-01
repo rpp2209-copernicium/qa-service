@@ -1,0 +1,6 @@
+# Enviroment Related
+node_modules
+.env
+
+# ETL Data
+data

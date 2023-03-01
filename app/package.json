@@ -6,10 +6,10 @@
   "scripts": {
     "start": "npx nodemon ./server/index.js --watch",
     "test": "jest ./__tests__ --watch",
-    "get-rows": "node ./db/utils/count-rows.js",
-    "db-seed-qs": "node ./db/utils/etl/questions-etl.js --watch",
-    "db-seed-as": "node ./db/utils/etl/answers-etl.js --watch",
-    "db-seed-aps": "node ./db/utils/etl/photos-etl.js --watch"
+    "get-rows": "node ./data/etl/utils/count-rows.js",
+    "db-seed-qs": "node ./data/etl/questions-etl.js --watch",
+    "db-seed-as": "node ./data/etl/answers-etl.js --watch",
+    "db-seed-aps": "node ./data/etl/photos-etl.js --watch"
   },
   "repository": {
     "type": "git",

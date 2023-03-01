@@ -1,0 +1,6 @@
+# Node dirs
+node_modules
+npm-debug.log
+
+# CSV data
+data
