@@ -14,5 +14,15 @@ services:
   postgres:
     build:
       context: ./postgres
+    # Not sure I want to attempt infinite restarts - could limit?
+    # restart: always
+    environment:
+      POSTGRES_DB: qa
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: sdc
+    volumes: # SHORT SYNTAX = VOLUME:CONTAINER_PATH
+      - qa-db-data:/etc/data
     ports:
       - "3076:3076"
+volumes:
+  qa-db-data:

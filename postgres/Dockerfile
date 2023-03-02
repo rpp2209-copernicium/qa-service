@@ -1,8 +1,8 @@
 # pull the PostgreSQL image from Docker
 FROM postgres:latest
 
-# copy the generated modules and all other files to the container
-COPY . .
+# copy the db data to the container
+COPY ./data/ndjson ./etc/data
 
 # set required ENV variables
-ENV POSTGRES_PASSWORD=sdc
+# ENV POSTGRES_PASSWORD=sdc
