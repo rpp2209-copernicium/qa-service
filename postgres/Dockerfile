@@ -2,7 +2,6 @@
 FROM postgres:latest
 
 # copy the db data to the container
-COPY ./data/ndjson ./etc/data
+COPY ./data/ndjson/ /var/lib/postgresql/data/
 
-# set required ENV variables
-# ENV POSTGRES_PASSWORD=sdc
+ADD schema.sql /docker-entrypoint-initdb.d
