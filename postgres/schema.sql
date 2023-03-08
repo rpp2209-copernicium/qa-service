@@ -4,7 +4,9 @@ BEGIN;
 
 CREATE SCHEMA qa;
 
+-- ----------------------
 -- QUESTIONS TABLE
+-- ----------------------
 CREATE TABLE questions(
 	id INT PRIMARY KEY NOT NULL,
 	product VARCHAR(255) NOT NULL,
@@ -33,7 +35,9 @@ INSERT INTO questions(
 
 SAVEPOINT q_db_created;
 
+-- ----------------------
 -- ANSWERS TABLE
+-- ----------------------
 CREATE TABLE answers(
 	id INT PRIMARY KEY NOT NULL,
 	question INT REFERENCES questions NOT NULL,
@@ -62,7 +66,9 @@ INSERT INTO answers(
 
 SAVEPOINT a_db_created;
 
+-- ----------------------
 -- PHOTOS TABLE
+-- ----------------------
 CREATE TABLE answers_photos(
 	id INT PRIMARY KEY NOT NULL,
 	answer INT REFERENCES answers NOT NULL,
@@ -73,14 +79,33 @@ INSERT INTO answers_photos(id, answer, url) VALUES (1, 1, 'default.png');
 
 SAVEPOINT p_db_created;
 
-	-- CREATE A VIEW
-	-- Possible views: question_answers
-	-- CREATE VIEW get_one_question AS
-  --       SELECT id, body, asker_name
-  --       FROM questions
-  --       LIMIT 1;
-	-- CREATE VIEW helpful_questions AS
-	-- 			SELECT id, body, asker_name, helpful
-	-- 			FROM questions
-	-- 			WHERE helpful > 0;
+COMMIT;
+
+-- ----------------------
+-- INSERT REAL DATA
+-- ----------------------
+BEGIN;
+
+COPY questions(
+	id,
+	product,
+	body,
+	created_at,
+	asker_name,
+	reported,
+	helpful
+)
+
+FROM 'questions.csv'
+
+DELIMITER ','
+
+CSV HEADER
+
+SAVEPOINT q_db_loaded;
+
+-- SAVEPOINT a_db_loaded;
+
+-- SAVEPOINT p_db_loaded;
+
 COMMIT;
