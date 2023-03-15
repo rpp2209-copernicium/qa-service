@@ -1,22 +1,17 @@
 # pull the PostgreSQL image from Docker
 FROM postgres:latest
 
+# copy the config file to the container
+RUN cat /usr/share/postgresql/postgresql.conf.sample > my-postgres.conf
+
+# COPY postgresql.conf /usr/share/postgresql/postgresql.conf
+# RUN vi postgresql.conf 1G i listen_addresses = '*' :wq
+
 # create database + tables
-ADD schema.sql /docker-entrypoint-initdb.d
+ADD db/schema.sql /docker-entrypoint-initdb.d
 
-# copy the db data to the container
-COPY ./data/csv /var/lib/postgresql/data/
-
+# set the current working directory
 WORKDIR /var/lib/postgresql/data
 
-# install node and npm
-# RUN apt-get update && apt-get install -y \
-#     software-properties-common \
-# 		nodejs \
-#     npm
-
-# install node packages
-# RUN npm i pg pg-copy-streams stream
-
-# run load db script
-# RUN node ./etl/questions-etl.js
+# copy the db data to the container
+COPY ./data/csv ../tmp/data/

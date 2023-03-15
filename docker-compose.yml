@@ -1,29 +1,42 @@
-version: '3.7'
 services:
-  nodeserver:
+
+  app:
+    image: node:alpine
     build:
-      context: ./app
+      context: ../fec-graviton-legacy/
+      dockerfile: ../fec-graviton-legacy/Dockerfile
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: sdc
+      POSTGRES_DB: qa
+    volumes:
+      - ../fec-graviton-legacy/:/app
     ports:
       - "3000:3000"
-  nginx:
-    restart: always
-    build:
-      context: ./nginx
-    ports:
-      - "80:80"
+    working_dir: /app
+
+  # nginx:
+  #   restart: always
+  #   build:
+  #     context: ./nginx
+  #   ports:
+  #     - "80:80"
+
   postgres:
+    image: postgres:latest
     build:
       context: ./postgres
     restart: always
     environment:
-      POSTGRES_DB: qa
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: sdc
-      PGDATA: /tmp
+      POSTGRES_DB: qa
+      # PGDATA: /tmp
     volumes:
       - qa-db-data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
+
 volumes:
   qa-db-data:
-    name: qa-db-data
