@@ -3,11 +3,10 @@ FROM postgres:latest
 
 # copy the config file to the container
 RUN cat /usr/share/postgresql/postgresql.conf.sample > my-postgres.conf
+
+# allow all containers to access the database
 RUN echo "listen_addresses = '*'" >> my-postgres.conf
 RUN cat my-postgres.conf
-
-# COPY postgresql.conf /usr/share/postgresql/postgresql.conf
-# RUN vi postgresql.conf 1G i listen_addresses = '*' :wq
 
 # create database + tables
 ADD db/schema.sql /docker-entrypoint-initdb.d
@@ -19,8 +18,18 @@ WORKDIR /usr/tmp/data/
 
 # copy the db data to the container
 COPY ./data/csv .
-# COPY scripts/db.sh .
 
-# # ENTRYPOINT ["/usr/tmp/data/db.sh"]
+
+
+
+
+
+
+
+
+
+
+# Ignore Below This Line
+# ENTRYPOINT ["/usr/tmp/data/db.sh"]
 # SHELL [ "/bin/bash", "-c"]
 # CMD ["sh", "db.sh"]

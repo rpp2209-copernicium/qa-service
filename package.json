@@ -4,8 +4,6 @@
   "description": "Atelier Q&amp;A Service",
   "main": "index.js",
   "scripts": {
-    "start": "npx nodemon ./server/index.js --watch",
-    "test": "jest ./__tests__ --watch",
     "get-rows": "node ./data/etl/utils/count-rows.js",
     "db-seed-qs": "node ./data/etl/questions-etl.js --watch",
     "db-seed-as": "node ./data/etl/answers-etl.js --watch",

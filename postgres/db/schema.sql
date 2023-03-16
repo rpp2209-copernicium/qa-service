@@ -1,6 +1,3 @@
--- DROP DATABASE qa;
--- CREATE DATABASE qa IF NOT EXISTS;
-
 \connect qa;
 
 BEGIN;
@@ -21,17 +18,6 @@ CREATE TABLE questions(
 	helpful INT
 );
 
--- CREATE TABLE questions(
--- 	id INT PRIMARY KEY NOT NULL,
--- 	product VARCHAR(255) NOT NULL,
--- 	body VARCHAR(255),
--- 	created_at TIMESTAMP,
--- 	asker_name VARCHAR(255) NOT NULL,
--- 	reported BOOLEAN,
--- 	helpful INT
--- );
-
-
 SAVEPOINT q_db_created;
 
 -- ----------------------
@@ -48,16 +34,6 @@ CREATE TABLE answers(
 	helpful INT
 );
 
--- CREATE TABLE answers(
--- 	id INT PRIMARY KEY NOT NULL,
--- 	question INT REFERENCES questions NOT NULL,
--- 	body VARCHAR(255),
--- 	created_at BIGSERIAL,
--- 	answerer_name VARCHAR(255) NOT NULL,
--- 	reported BOOLEAN,
--- 	helpful INT
--- );
-
 SAVEPOINT a_db_created;
 
 -- ----------------------
@@ -68,12 +44,6 @@ CREATE TABLE answers_photos(
 	answer_id INT REFERENCES answers NOT NULL,
 	url VARCHAR(255)
 );
-
--- CREATE TABLE answers_photos(
--- 	id INT PRIMARY KEY NOT NULL,
--- 	answer INT REFERENCES answers NOT NULL,
--- 	url VARCHAR(255)
--- );
 
 SAVEPOINT p_db_created;
 
