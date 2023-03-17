@@ -15,12 +15,17 @@ services:
     ports:
       - "3000:3000"
     working_dir: /app
-  # nginx:
-  #   restart: always
-  #   build:
-  #     context: ./nginx
-  #   ports:
-  #     - "80:80"
+  api:
+    restart: always
+    build:
+      dockerfile: ./Dockerfile
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: sdc
+      POSTGRES_DB: qa
+    ports:
+      - "80:80"
 
   postgres:
     image: postgres:latest

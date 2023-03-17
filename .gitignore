@@ -1,0 +1,10 @@
+# ignore nginx container/image
+# was used for learning about docker
+# but not ready to discard it yet
+nginx/
+node_modules/
+
+# ignore config files
+.DS_Store
+*/.DS_Store
+.env
