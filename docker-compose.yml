@@ -5,11 +5,11 @@ services:
   app:
     image: node:alpine
     build: ../fec-graviton-legacy/
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: sdc
-      POSTGRES_DB: qa
+    # environment:
+    #   POSTGRES_HOST: postgres
+    #   POSTGRES_USER: admin
+    #   POSTGRES_PASSWORD: sdc
+    #   POSTGRES_DB: qa
     volumes:
       - ../fec-graviton-legacy/:/app
     ports:
@@ -25,7 +25,8 @@ services:
       POSTGRES_PASSWORD: sdc
       POSTGRES_DB: qa
     ports:
-      - "80:80"
+      - "8080:8080"
+    working_dir: /api
 
   postgres:
     image: postgres:latest

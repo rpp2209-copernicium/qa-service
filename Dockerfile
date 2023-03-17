@@ -14,6 +14,9 @@ RUN npm i
 # copy the db data to the container
 COPY ./api .
 
+# ports are already mapped in compose YAML file
+EXPOSE 8080
+
 # start the server and listen for any changes
 CMD ["npm", "start"]
 

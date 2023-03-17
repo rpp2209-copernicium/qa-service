@@ -9,7 +9,7 @@ RUN echo "listen_addresses = '*'" >> my-postgres.conf
 RUN cat my-postgres.conf
 
 # create database + tables
-ADD db/schema.sql /docker-entrypoint-initdb.d
+ADD dbinit/schema.sql /docker-entrypoint-initdb.d
 # ADD scripts/user.sh /docker-entrypoint-initdb.d
 ADD scripts/setup-db.sh /docker-entrypoint-initdb.d
 
