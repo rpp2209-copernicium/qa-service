@@ -16,17 +16,37 @@ let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`
 // =============================================
 let pgPool = new Pool({ connectionString: dbString });
 
-// todo: convert this from jest syntax (?)
+// todo:
+// convert this from jest syntax (?)
 // afterAll(async () => {
 //   await pgPool.end();
 // });
 
-let dbFetch = async (cb) => {
+let fetch = async (endpoint, cb) => {
 	const client = await pgPool.connect();
+	let id, table;
+
+	// Check if the endpoint is /question_id/answers
+	// and do some variable setting if so
+	const regex = /^\d+\/answers$/;
+
+	if (endpoint.match(regex)) {
+		console.log('Match found', endpoint.match(regex));
+		id = endpoint.split('/')[0];
+		table = endpoint.split('/')[1];
+		console.log('Splitting on backslash-- id is:', id, 'table name is: ', table);
+	}
+
+	let query = `
+		SELECT *
+		FROM ${table || 'questions'}
+		${ table === 'answers' ? `WHERE question_id=${id}` : '' }
+		LIMIT 5
+	`;
 
 	try {
-		const { rows } = await client.query('SELECT count(*) FROM questions AS "result"');
-		cb(null, parseInt(rows[0].count));
+		const { rows } = await client.query(query);
+		cb(null, rows);
 	} catch (err) {
 		cb(err);
 	} finally {
@@ -34,4 +54,4 @@ let dbFetch = async (cb) => {
 	}
 };
 
-module.exports.dbFetch = dbFetch;
+module.exports.fetch = fetch;

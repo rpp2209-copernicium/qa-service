@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const dbFetch = require('../../utils/db.js').dbFetch;
+const fetch = require('../../utils/db.js').fetch;
 
 // =============================================
 //                Questions
@@ -12,12 +12,12 @@ const dbFetch = require('../../utils/db.js').dbFetch;
 // Parameters: product_id (int), page (int), count (int)
 // Expected Response: Status: 200 OK
 router.get('/questions', (req, res) => {
-	dbFetch((err, payload) => {
+	fetch('questions', (err, payload) => {
 		if (err) {
 			console.log('FETCH Q\'s Error:', err);
 			res.status(500).json(err);
 		} else {
-			console.log('Q Data', payload);
+			// console.log('Q Data', payload);
 			res.status(200).json(payload);
 		}
 	});
@@ -60,8 +60,17 @@ router.put('/questions/:question_id/report', (req, res) => {
 // Query Parameters: page, count
 // Expected Response: Status: 200 OK
 router.get('/questions/:question_id/answers', (req, res) => {
+	let id = req.params.question_id;
 
-	res.send('GOT Answers for Question #' + req.params.question_id);
+  fetch(`${id}/answers`, (err, payload) => {
+		if (err) {
+			console.log('FETCH A\'s Error:', err);
+			res.status(500).json(err);
+		} else {
+			console.log('A Data', payload);
+			res.status(200).json(payload);
+		}
+	});
 });
 
 // Add an Answer
