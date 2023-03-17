@@ -1,7 +1,12 @@
 # qa-service
 Atelier Q&amp;A Service 
 
-To start container: `docker-compose up -d --build`
+**Docker Containers**:
+- Postgres: runs on port 5432
+- Client: runs on port 3000
+- API: runs on port 8080
+
+To start containers: `docker-compose up -d --build`
 
 To enter the container: `docker exec -it <container-id> /bin/sh`
 
