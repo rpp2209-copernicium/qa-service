@@ -1,44 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-
-require("dotenv").config();
-const { Pool } = require('pg');
-
-// DB Connection Config
-let DB_USER = process.env.DB_USER;
-let DB_PASSWORD = process.env.DB_PASSWORD;
-let DB_HOST = process.env.DB_HOST;
-let DB_NAME = process.env.DB_NAME;
-
-// Connection String Pattern
-// schema://user:password@host:port/database
-let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
-
+const dbFetch = require('../../utils/db.js').dbFetch;
 
 // =============================================
-//                QA Routes
+//                Questions
 // =============================================
-
-
 // List Questions
 // GET /qa/questions
 
 // Parameters: product_id (int), page (int), count (int)
 // Expected Response: Status: 200 OK
 router.get('/questions', (req, res) => {
-	res.send('GOT questions');
-});
-
-// Answers List
-// GET /qa/questions/:question_id/answers
-
-// Parameters: question_id
-// Query Parameters: page, count
-// Expected Response: Status: 200 OK
-router.get('/questions/:question_id/answers', (req, res) => {
-
-	res.send('GOT Answers for Question #' + req.params.question_id);
+	dbFetch((err, payload) => {
+		if (err) {
+			console.log('FETCH Q\'s Error:', err);
+			res.status(500).json(err);
+		} else {
+			console.log('Q Data', payload);
+			res.status(200).json(payload);
+		}
+	});
 });
 
 // Add a Question
@@ -48,16 +30,6 @@ router.get('/questions/:question_id/answers', (req, res) => {
 // Expected Response: Status: 201 CREATED
 router.post('/questions', (req, res) => {
 	res.send('POSTed questions');
-});
-
-// Add an Answer
-// POST /qa/questions/:question_id/answers
-
-// Parameters: question_id
-// Body Parameters: body, name, email, photos
-// Expected Response: Status: 201 CREATED
-router.post('/questions/:question_id/answers', (req, res) => {
-	res.send('POSTED answers for Question #' + req.params.question_id);
 });
 
 // Mark Question as Helpful
@@ -76,6 +48,30 @@ router.put(' /questions/:question_id/helpful', (req, res) => {
 // Expected Response: Status: 204 NO CONTENT
 router.put('/questions/:question_id/report', (req, res) => {
 	res.send('Reported Question #' + req.params.question_id);
+});
+
+// =============================================
+//                Answers
+// =============================================
+// Answers List
+// GET /qa/questions/:question_id/answers
+
+// Parameters: question_id
+// Query Parameters: page, count
+// Expected Response: Status: 200 OK
+router.get('/questions/:question_id/answers', (req, res) => {
+
+	res.send('GOT Answers for Question #' + req.params.question_id);
+});
+
+// Add an Answer
+// POST /qa/questions/:question_id/answers
+
+// Parameters: question_id
+// Body Parameters: body, name, email, photos
+// Expected Response: Status: 201 CREATED
+router.post('/questions/:question_id/answers', (req, res) => {
+	res.send('POSTED answers for Question #' + req.params.question_id);
 });
 
 // Mark Answer as Helpful
