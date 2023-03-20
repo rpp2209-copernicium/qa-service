@@ -8,14 +8,14 @@ CREATE SCHEMA qa;
 -- QUESTIONS TABLE
 -- ----------------------
 CREATE TABLE questions(
-	id SERIAL PRIMARY KEY NOT NULL,
+	question_id SERIAL PRIMARY KEY NOT NULL,
 	product_id VARCHAR(255) NOT NULL,
-	body VARCHAR(255),
-	date_written BIGSERIAL,
+	question_body VARCHAR(255),
+	question_date BIGSERIAL,
 	asker_name VARCHAR(255) NOT NULL,
 	asker_email VARCHAR(255) NOT NULL,
 	reported BOOLEAN,
-	helpful INT
+	question_helpfulness INT
 );
 
 SAVEPOINT q_db_created;
@@ -24,14 +24,14 @@ SAVEPOINT q_db_created;
 -- ANSWERS TABLE
 -- ----------------------
 CREATE TABLE answers(
-	id SERIAL PRIMARY KEY NOT NULL,
+	answer_id SERIAL PRIMARY KEY NOT NULL,
 	question_id INT REFERENCES questions NOT NULL,
-	body VARCHAR(255),
-	date_written BIGSERIAL,
+	answer_body VARCHAR(255),
+	answer_date BIGSERIAL,
 	answerer_name VARCHAR(255) NOT NULL,
 	answerer_email VARCHAR(255),
-	reported BOOLEAN,
-	helpful INT
+	answer_helpfulness INT,
+	reported BOOLEAN
 );
 
 SAVEPOINT a_db_created;

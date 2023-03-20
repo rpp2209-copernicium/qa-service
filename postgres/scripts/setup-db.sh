@@ -13,9 +13,9 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	\c qa;
 	\dt;
 
-	\copy questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful) FROM 'questions.csv' DELIMITER ',' CSV HEADER;
+	\copy questions(question_id, product_id, question_body, question_date, asker_name, asker_email, reported, question_helpfulness) FROM 'questions.csv' DELIMITER ',' CSV HEADER;
 
-	\copy answers(id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) FROM 'answers.csv' DELIMITER ',' CSV HEADER;
+	\copy answers(answer_id, question_id, answer_body, answer_date, answerer_name, answerer_email, reported, answer_helpfulness) FROM 'answers.csv' DELIMITER ',' CSV HEADER;
 
 	\copy answers_photos(id, answer_id, url) FROM 'answers_photos.csv' DELIMITER ',' CSV HEADER;
 EOSQL
@@ -24,17 +24,15 @@ EOSQL
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	\c qa;
 
-	SELECT setval(pg_get_serial_sequence('questions', 'id'), (SELECT MAX(id) FROM questions)+1);
+	SELECT setval(pg_get_serial_sequence('questions', 'question_id'), (SELECT MAX(question_id) FROM questions)+1);
 EOSQL
 
 # test inserting a row
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
 	\c qa;
 
-	INSERT INTO questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful) values(DEFAULT, '1', 'test bod', 1628855284662, 'Sandra', 'sandra@email.com', false, 0);
+	INSERT INTO questions(question_id, product_id, question_body, question_date, asker_name, asker_email, reported, question_helpfulness) values(DEFAULT, '1', 'test bod', 1628855284662, 'Sandra', 'sandra@email.com', false, 0);
 EOSQL
-
-
 
 
 

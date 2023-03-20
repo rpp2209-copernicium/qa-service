@@ -23,22 +23,48 @@ router.get('/questions', (req, res) => {
 	});
 });
 
+// List Questions for a single product
+// GET /qa/questions/:product_id
+
+// Parameters: product_id (int), page (int), count (int)
+router.get('/questions/:product_id', (req, res) => {
+	fetch(`questions/&product_id=${req.params.product_id}`, (err, payload) => {
+		if (err) {
+			console.log(`Fetch Single Product: ${req.params.product_id} Q\'s Error:`, err);
+			res.status(500).json(err);
+		} else {
+			// console.log('Q Data', payload);
+			res.status(200).json(payload); // Expected Status: 200 OK
+		}
+	});
+});
+
 // // Add a Question
 // // POST /qa/questions
-// router.post('/questions', (req, res) => {
-// 	// Body Parameters: body, name, email, product_id
-// 	const body = req.body;
+router.post('/questions', (req, res) => {
+	// Body Parameters: body, name, email, product_id
+	console.log('GOT BODY', req.body);
 
-// 	// send(body, (err, payload) => {
-// 	// 	if (err) {
-// 	// 		console.log('POST Question Error:', err)
-// 	// 		res.status(500).json(err);
-// 	// 	} else {
-// 	// 		res.status(201).send('CREATED'); // Expected Status: 201 CREATED
-// 	// 	}
-// 	// });
+	const question = {
+		product_id: req.body.product_id,
+		question_body: req.body.body,
+		question_date: Date.now(),
+		asker_name: req.body.name,
+		asker_email: req.body.email,
+		question_helpfulness: 0,
+		reported: false,
+	};
 
-// });
+	save('questions', question, (err, payload) => {
+		if (err) {
+			console.log('POST Question Error:', err)
+			res.status(500).json(err);
+		} else {
+			res.status(201).send('CREATED'); // Expected Status: 201 CREATED
+		}
+	});
+
+});
 
 // // Mark Question as Helpful
 // // PUT /qa/questions/:question_id/helpful
@@ -63,21 +89,21 @@ router.get('/questions', (req, res) => {
 // // Answers List
 // // GET /qa/questions/:question_id/answers
 
-// // Parameters: question_id
-// // Query Parameters: page, count
-// router.get('/questions/:question_id/answers', (req, res) => {
-// 	let id = req.params.question_id;
+// Parameters: question_id
+// Query Parameters: page, count
+router.get('/questions/:question_id/answers', (req, res) => {
+	let id = req.params.question_id;
 
-//   fetch(`${id}/answers`, (err, payload) => {
-// 		if (err) {
-// 			console.log('FETCH A\'s Error:', err);
-// 			res.status(500).json(err);
-// 		} else {
-// 			// console.log('A Data', payload);
-// 			res.status(200).json(payload); // Expected Status: 200 OK
-// 		}
-// 	});
-// });
+  fetch(`${id}/answers`, (err, payload) => {
+		if (err) {
+			console.log('FETCH A\'s Error:', err);
+			res.status(500).json(err);
+		} else {
+			// console.log('A Data', payload);
+			res.status(200).json(payload); // Expected Status: 200 OK
+		}
+	});
+});
 
 // // Add an Answer
 // // POST /qa/questions/:question_id/answers

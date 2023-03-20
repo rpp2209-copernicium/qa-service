@@ -37,10 +37,15 @@ let fetch = async (endpoint, cb) => {
 		console.log('Splitting on backslash-- id is:', id, 'table name is: ', table);
 	}
 
+	const qString = ((table === 'answers') ?
+		'SELECT answer_id, question_id, answer_body, answer_date, answerer_name, answerer_email, answer_helpfulness, reported'
+		: 'SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported'
+	);
+
 	const query = `
-		SELECT *
+		${qString}
 		FROM ${table || 'questions'}
-		${ table === 'answers' ? `WHERE question_id=${id}` : '' }
+		${ table === 'answers' ? `WHERE question_id=${id} INNER JOIN answers ON questions.question_id = answers.question_id` : '' }
 		LIMIT 5
 	`;
 
@@ -58,19 +63,17 @@ let update = () => {
 	console.log('updating record in the database...todo');
 };
 
-let save = async (question, cb) => {
+let save = async (table, question, cb) => {
 	const client = await pgPool.connect();
+	const { product_id, question_body, question_date, asker_name, asker_email, question_helpfulness, reported } = question;
 
-	const { product_id, body, date_written, asker_name, asker_email, reported, helpful } = question;
-
-	// Hard-coded
+	// Hard-coded Test Query String
 	// const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values('1', 'another test body', 1638855284662, 'fuck', 'FUCK', false, 0);`;
 
-	const query = `INSERT INTO questions(
-		id, product_id, body, date_written, asker_name, asker_email, reported, helpful)
-		values(DEFAULT, '${product_id}', '${body}', '${date_written}', '${asker_name}', '${asker_email}', ${reported}, ${helpful})
+	const query = `INSERT INTO ${table}(
+		product_id, question_body, question_date, asker_name, asker_email, question_helpfulness, reported
+		values('${product_id}', '${question_body}', '${question_date}', '${asker_name}', '${asker_email}', ${question_helpfulness}, ${reported})
 	`;
-	// console.log('Q STRING', query);
 
 	try {
 		const { rows } = await client.query(query);
@@ -85,23 +88,24 @@ let save = async (question, cb) => {
 	}
 };
 
-const q = {
-	product_id: '1',
-	body: 'test',
-	date_written: 1638855284662,
-	asker_name: 'linda',
-	asker_email: 'linda@linda.com',
-	reported: false,
-	helpful: 0
-};
+// TEST INSERT WORKS
+// const q = {
+// 	product_id: '1',
+// 	body: 'test',
+// 	date_written: 1638855284662,
+// 	asker_name: 'linda',
+// 	asker_email: 'linda@linda.com',
+// 	reported: false,
+// 	helpful: 0
+// };
 
-// ==============================olumn "test" does not exist at character 121
-save(q, (err, payload) => {
-	if (err) {
-		console.log('SAVE ERROR', err);
-	} else {
-		console.log('fucking worked. finally', payload);
-	}
-});
+// // ==============================olumn "test" does not exist at character 121
+// save(q, (err, payload) => {
+// 	if (err) {
+// 		console.log('SAVE ERROR', err);
+// 	} else {
+// 		console.log('fucking worked. finally', payload);
+// 	}
+// });
 
 module.exports = { fetch, save, update };
