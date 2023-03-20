@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const fetch = require('../../utils/db.js').fetch;
+
+const { fetch, save, update } = require('../../utils/db.js');
 
 // =============================================
 //                Questions
@@ -10,7 +11,6 @@ const fetch = require('../../utils/db.js').fetch;
 // GET /qa/questions
 
 // Parameters: product_id (int), page (int), count (int)
-// Expected Response: Status: 200 OK
 router.get('/questions', (req, res) => {
 	fetch('questions', (err, payload) => {
 		if (err) {
@@ -18,36 +18,43 @@ router.get('/questions', (req, res) => {
 			res.status(500).json(err);
 		} else {
 			// console.log('Q Data', payload);
-			res.status(200).json(payload);
+			res.status(200).json(payload); // Expected Status: 200 OK
 		}
 	});
 });
 
 // Add a Question
 // POST /qa/questions
-
-// Body Parameters: body, name, email, product_id
-// Expected Response: Status: 201 CREATED
 router.post('/questions', (req, res) => {
-	res.send('POSTed questions');
+	// Body Parameters: body, name, email, product_id
+	const body = req.body;
+
+	send(body, (err, payload) => {
+		if (err) {
+			console.log('POST Question Error:', err)
+			res.status(500).json(err);
+		} else {
+			res.status(201).send('CREATED'); // Expected Status: 201 CREATED
+		}
+	});
+
 });
 
 // Mark Question as Helpful
 // PUT /qa/questions/:question_id/helpful
-
-// Parameters: question_id
-// Expected Response: Status: 204 NO CONTENT
-router.put(' /questions/:question_id/helpful', (req, res) => {
-	res.send('Question #' + req.params.question_id + ' was Helpful');
+router.put('/questions/:question_id/helpful', (req, res) => {
+	// Parameters: question_id
+	update();
+	res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
 });
 
 // Report Question
 // PUT /qa/questions/:question_id/report
-
-// Parameters: question_id
-// Expected Response: Status: 204 NO CONTENT
 router.put('/questions/:question_id/report', (req, res) => {
-	res.send('Reported Question #' + req.params.question_id);
+	// Parameters: question_id
+	// Expected Response: Status: 204 NO CONTENT
+	update();
+	res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
 });
 
 // =============================================
@@ -58,7 +65,6 @@ router.put('/questions/:question_id/report', (req, res) => {
 
 // Parameters: question_id
 // Query Parameters: page, count
-// Expected Response: Status: 200 OK
 router.get('/questions/:question_id/answers', (req, res) => {
 	let id = req.params.question_id;
 
@@ -67,38 +73,33 @@ router.get('/questions/:question_id/answers', (req, res) => {
 			console.log('FETCH A\'s Error:', err);
 			res.status(500).json(err);
 		} else {
-			console.log('A Data', payload);
-			res.status(200).json(payload);
+			// console.log('A Data', payload);
+			res.status(200).json(payload); // Expected Status: 200 OK
 		}
 	});
 });
 
 // Add an Answer
 // POST /qa/questions/:question_id/answers
-
-// Parameters: question_id
-// Body Parameters: body, name, email, photos
-// Expected Response: Status: 201 CREATED
 router.post('/questions/:question_id/answers', (req, res) => {
-	res.send('POSTED answers for Question #' + req.params.question_id);
+	// Parameters: question_id
+	// Body Parameters: body, name, email, photos
+	save();
+	res.status(201).send('CREATED'); // Expected Response: Status: 201 CREATED
 });
 
 // Mark Answer as Helpful
 // PUT /qa/answers/:answer_id/helpful
-
-// Parameters: answer_id
-// Expected Response: Status: 204 NO CONTENT
-router.put('/qa/answers/:answer_id/helpful', (req, res) => {
-	res.send('Answer #' + req.params.question_id + 'was helpful');
+router.put('/answers/:answer_id/helpful', (req, res) => {
+	// Parameters: answer_id
+	res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
 });
 
 // Report Answer
 // PUT /qa/answers/:answer_id/report
-
-// Parameters: answer_id
-// Expected Response: Status: 204 NO CONTENT
 router.put('/answers/:answer_id/report', (req, res) => {
-	res.send('Reported Answer #' + req.params.answer_id);
+	// Parameters: answer_id
+	res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
 });
 
 module.exports = router;

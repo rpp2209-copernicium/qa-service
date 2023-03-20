@@ -37,7 +37,7 @@ let fetch = async (endpoint, cb) => {
 		console.log('Splitting on backslash-- id is:', id, 'table name is: ', table);
 	}
 
-	let query = `
+	const query = `
 		SELECT *
 		FROM ${table || 'questions'}
 		${ table === 'answers' ? `WHERE question_id=${id}` : '' }
@@ -54,4 +54,51 @@ let fetch = async (endpoint, cb) => {
 	}
 };
 
-module.exports.fetch = fetch;
+let save = async (question, cb) => {
+	const client = await pgPool.connect();
+	// console.log('saving to database...todo', question.body, 'valid time?', Date.now());
+
+	// const { body, name, email, product_id } = question;
+	const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values(${question.product_id}, ${question.body}, ${Date.now()}, ${question.name}, ${question.email}, false, 0)`;
+	console.log('Q STRING', query);
+
+	try {
+		const result = await client.query(query);
+		console.log('INSERT Question Result', result);
+		cb(null, result);
+
+	} catch (err) {
+		cb(err);
+
+	} finally {
+		client.release(); // Release connection back to the pool
+	}
+};
+
+const q = {
+	body: 'This is a test body',
+	name: 'Sandra O.R. Something',
+	email: 'sandra@email.com',
+	product_id: '1'
+}
+
+save(q,
+
+	(err, payload) => {
+		if (err) {
+			console.log('Save a Question Error:', err)
+			// res.status(500).json(err);
+		} else {
+			// Expected Response: Status: 201 CREATED
+			console.log('Saved new QUESTION! ', payload);
+			// res.status(201).send('CREATED');
+		}
+	}
+
+);
+
+let update = () => {
+	console.log('updating record in the database...todo');
+};
+
+module.exports = { fetch, save, update };

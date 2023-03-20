@@ -10,7 +10,6 @@ RUN cat my-postgres.conf
 
 # create database + tables
 ADD db/init/schema.sql /docker-entrypoint-initdb.d
-# ADD scripts/user.sh /docker-entrypoint-initdb.d
 ADD scripts/setup-db.sh /docker-entrypoint-initdb.d
 
 # set the current working directory
