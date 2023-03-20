@@ -54,18 +54,22 @@ let fetch = async (endpoint, cb) => {
 	}
 };
 
-let save = async (question, cb) => {
-	const client = await pgPool.connect();
-	// console.log('saving to database...todo', question.body, 'valid time?', Date.now());
+let update = () => {
+	console.log('updating record in the database...todo');
+};
 
-	// const { body, name, email, product_id } = question;
-	const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values(${question.product_id}, ${question.body}, ${Date.now()}, ${question.name}, ${question.email}, false, 0)`;
-	console.log('Q STRING', query);
+let save = async (cb) => {
+	const client = await pgPool.connect();
+
+	// const { product_id, body, date_written, asker_name, asker_email, reported, helpful } = question;
+	const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values('1', 'another test body', 1638855284662, 'fuck', 'FUCK', false, 0);`;
+	// const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values(${product_id}, ${body}, ${date_written}, ${asker_name}, ${asker_email}, ${reported}, ${helpful});`;
+	// console.log('Q STRING', query);
 
 	try {
-		const result = await client.query(query);
-		console.log('INSERT Question Result', result);
-		cb(null, result);
+		const { rows } = await client.query(query);
+		// console.log('INSERT Question Result', result);
+		cb(null, rows);
 
 	} catch (err) {
 		cb(err);
@@ -75,30 +79,13 @@ let save = async (question, cb) => {
 	}
 };
 
-const q = {
-	body: 'This is a test body',
-	name: 'Sandra O.R. Something',
-	email: 'sandra@email.com',
-	product_id: '1'
-}
-
-save(q,
-
-	(err, payload) => {
-		if (err) {
-			console.log('Save a Question Error:', err)
-			// res.status(500).json(err);
-		} else {
-			// Expected Response: Status: 201 CREATED
-			console.log('Saved new QUESTION! ', payload);
-			// res.status(201).send('CREATED');
-		}
+// ==============================
+save((err, payload) => {
+	if (err) {
+		console.log('SAVE ERROR', err);
+	} else {
+		console.log('fucking worked. finally', payload);
 	}
-
-);
-
-let update = () => {
-	console.log('updating record in the database...todo');
-};
+});
 
 module.exports = { fetch, save, update };

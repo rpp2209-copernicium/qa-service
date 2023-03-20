@@ -29,14 +29,14 @@ router.post('/questions', (req, res) => {
 	// Body Parameters: body, name, email, product_id
 	const body = req.body;
 
-	send(body, (err, payload) => {
-		if (err) {
-			console.log('POST Question Error:', err)
-			res.status(500).json(err);
-		} else {
-			res.status(201).send('CREATED'); // Expected Status: 201 CREATED
-		}
-	});
+	// send(body, (err, payload) => {
+	// 	if (err) {
+	// 		console.log('POST Question Error:', err)
+	// 		res.status(500).json(err);
+	// 	} else {
+	// 		res.status(201).send('CREATED'); // Expected Status: 201 CREATED
+	// 	}
+	// });
 
 });
 
