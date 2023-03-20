@@ -15,14 +15,25 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 
 	\copy questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful) FROM 'questions.csv' DELIMITER ',' CSV HEADER;
 
-	SELECT setval(pg_get_serial_sequence('questions', 'id'), (SELECT MAX(id) FROM questions)+1);
+	\copy answers(id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) FROM 'answers.csv' DELIMITER ',' CSV HEADER;
 
-	INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values("1", "test bod", 1628855284662, "Sandra", "sandra@email.com", false, 0);
+	\copy answers_photos(id, answer_id, url) FROM 'answers_photos.csv' DELIMITER ',' CSV HEADER;
 EOSQL
 
-# \copy answers(id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful) FROM 'answers.csv' DELIMITER ',' CSV HEADER;
+# set the `next` primary key value to the current record count + 1 so we can insert more rows
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	\c qa;
 
-# \copy answers_photos(id, answer_id, url) FROM 'answers_photos.csv' DELIMITER ',' CSV HEADER;
+	SELECT setval(pg_get_serial_sequence('questions', 'id'), (SELECT MAX(id) FROM questions)+1);
+EOSQL
+
+# test inserting a row
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+	\c qa;
+
+	INSERT INTO questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful) values(DEFAULT, '1', 'test bod', 1628855284662, 'Sandra', 'sandra@email.com', false, 0);
+EOSQL
+
 
 
 
