@@ -58,12 +58,18 @@ let update = () => {
 	console.log('updating record in the database...todo');
 };
 
-let save = async (cb) => {
+let save = async (question, cb) => {
 	const client = await pgPool.connect();
 
-	// const { product_id, body, date_written, asker_name, asker_email, reported, helpful } = question;
-	const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values('1', 'another test body', 1638855284662, 'fuck', 'FUCK', false, 0);`;
-	// const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values(${product_id}, ${body}, ${date_written}, ${asker_name}, ${asker_email}, ${reported}, ${helpful});`;
+	const { product_id, body, date_written, asker_name, asker_email, reported, helpful } = question;
+
+	// Hard-coded
+	// const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values('1', 'another test body', 1638855284662, 'fuck', 'FUCK', false, 0);`;
+
+	const query = `INSERT INTO questions(
+		id, product_id, body, date_written, asker_name, asker_email, reported, helpful)
+		values(DEFAULT, '${product_id}', '${body}', '${date_written}', '${asker_name}', '${asker_email}', ${reported}, ${helpful})
+	`;
 	// console.log('Q STRING', query);
 
 	try {
@@ -79,8 +85,18 @@ let save = async (cb) => {
 	}
 };
 
-// ==============================
-save((err, payload) => {
+const q = {
+	product_id: '1',
+	body: 'test',
+	date_written: 1638855284662,
+	asker_name: 'linda',
+	asker_email: 'linda@linda.com',
+	reported: false,
+	helpful: 0
+};
+
+// ==============================olumn "test" does not exist at character 121
+save(q, (err, payload) => {
 	if (err) {
 		console.log('SAVE ERROR', err);
 	} else {
