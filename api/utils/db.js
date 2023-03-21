@@ -37,15 +37,38 @@ let fetch = async (endpoint, cb) => {
 		console.log('Splitting on backslash-- id is:', id, 'table name is: ', table);
 	}
 
-	const qString = ((table === 'answers') ?
-		'SELECT answer_id, question_id, answer_body, answer_date, answerer_name, answerer_email, answer_helpfulness, reported'
-		: 'SELECT question_id, question_body, question_date, asker_name, question_helpfulness, reported'
-	);
+	// const qString = ((table === 'answers') ?
+	// 	'SELECT answer_id, question_id, answer_body, answer_date, answerer_name, answerer_email, answer_helpfulness, reported'
+	// 	: 'SELECT questions.question_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported'
+	// );
 
+	// const query = `
+	// 	${qString}
+	// 	FROM ${table || 'questions'}
+	// 	${ table === 'answers' ? `WHERE questions.question_id=${id}` : 'INNER JOIN answers ON questions.question_id = answers.question_id' }
+	// 	LIMIT 5
+	// `;
+
+	// SELECT question_body, ARRAY_AGG(answer_id || '-' || answer_body) answers FROM questions INNER JOIN answers ON questions.question_id = answers.question_id GROUP BY questions.question_id LIMIT 5;
+
+	// ARRAY_AGG(json_build_object('answer_id', answers.answer_id, 'question_id', answers.question_id)) results
 	const query = `
-		${qString}
-		FROM ${table || 'questions'}
-		${ table === 'answers' ? `WHERE question_id=${id} INNER JOIN answers ON questions.question_id = answers.question_id` : '' }
+		SELECT results.product_id, JSON_AGG(results) results FROM (
+			SELECT (questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported) as q_data,
+			JSON_AGG(json_build_object(
+				'answer_id', answers.answer_id,
+				'question_id', answers.question_id,
+				'answer_body', answers.answer_body,
+				'answer_date', answers.answer_date,
+				'answerer_name', answers.answerer_name,
+				'answerer_email', answers.answerer_email,
+				'answer_helpfulness', answers.answer_helpfulness,
+				'reported', answers.reported
+			)
+		) answers FROM questions
+		INNER JOIN answers ON questions.question_id=answers.question_id
+		GROUP BY answers.question_id, questions.question_id) results
+		GROUP BY results.product_id
 		LIMIT 5
 	`;
 
