@@ -52,10 +52,11 @@ let fetch = async (endpoint, cb) => {
 	// SELECT question_body, ARRAY_AGG(answer_id || '-' || answer_body) answers FROM questions INNER JOIN answers ON questions.question_id = answers.question_id GROUP BY questions.question_id LIMIT 5;
 
 	// ARRAY_AGG(json_build_object('answer_id', answers.answer_id, 'question_id', answers.question_id)) results
+	// SELECT results.product_id, JSON_AGG(answers)
 	const query = `
-		SELECT results.product_id, JSON_AGG(results) results FROM (
-			SELECT (questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported) as q_data,
-			JSON_AGG(json_build_object(
+		SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+
+		JSON_AGG(json_build_object(
 				'answer_id', answers.answer_id,
 				'question_id', answers.question_id,
 				'answer_body', answers.answer_body,
@@ -65,10 +66,11 @@ let fetch = async (endpoint, cb) => {
 				'answer_helpfulness', answers.answer_helpfulness,
 				'reported', answers.reported
 			)
-		) answers FROM questions
+		) answers
+
+		FROM questions
 		INNER JOIN answers ON questions.question_id=answers.question_id
-		GROUP BY answers.question_id, questions.question_id) results
-		GROUP BY results.product_id
+		GROUP BY answers.question_id, questions.question_id
 		LIMIT 5
 	`;
 
