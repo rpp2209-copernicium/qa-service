@@ -53,7 +53,14 @@ let fetch = async (endpoint, cb) => {
 		SELECT answer_id,
 
 		json_build_object(
-			"answer_id", row_to_json(answers)
+			"answer_id",
+			json_build_object(
+				'id', answer_id,
+				'body', answer_body,
+				'date', answer_date,
+				'answerer_name', answerer_name,
+				'helpfulness', answer_helpfulness
+			)
 		) answers FROM answers
 
 		LIMIT 5
