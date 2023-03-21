@@ -49,30 +49,24 @@ let fetch = async (endpoint, cb) => {
 	// 	LIMIT 5
 	// `;
 
-	// SELECT question_body, ARRAY_AGG(answer_id || '-' || answer_body) answers FROM questions INNER JOIN answers ON questions.question_id = answers.question_id GROUP BY questions.question_id LIMIT 5;
-
-	// ARRAY_AGG(json_build_object('answer_id', answers.answer_id, 'question_id', answers.question_id)) results
-	// SELECT results.product_id, JSON_AGG(answers)
 	const query = `
-		SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+		SELECT answer_id,
 
-		JSON_AGG(json_build_object(
-				'answer_id', answers.answer_id,
-				'question_id', answers.question_id,
-				'answer_body', answers.answer_body,
-				'answer_date', answers.answer_date,
-				'answerer_name', answers.answerer_name,
-				'answerer_email', answers.answerer_email,
-				'answer_helpfulness', answers.answer_helpfulness,
-				'reported', answers.reported
-			)
-		) answers
+		json_build_object(
+			"answer_id", row_to_json(answers)
+		) answers FROM answers
 
-		FROM questions
-		INNER JOIN answers ON questions.question_id=answers.question_id
-		GROUP BY answers.question_id, questions.question_id
 		LIMIT 5
 	`;
+
+	// const query = `
+	// 	SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+	// 	json_build_object(
+	// 		'answers', (SELECT json_agg(row_to_json(answers)) FROM "questions")
+	// 	)
+	// 	GROUP BY answers.question_id, questions.question_id
+	// 	LIMIT 5
+	// `;
 
 	try {
 		const { rows } = await client.query(query);
