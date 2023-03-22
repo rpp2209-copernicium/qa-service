@@ -49,29 +49,74 @@ let fetch = async (endpoint, cb) => {
 	// 	LIMIT 5
 	// `;
 
-	const query = `
-		SELECT answer_id,
-
-		json_build_object(
-			"answer_id",
-			json_build_object(
-				'id', answer_id,
-				'body', answer_body,
-				'date', answer_date,
-				'answerer_name', answerer_name,
-				'helpfulness', answer_helpfulness
-			)
-		) answers FROM answers
-
-		LIMIT 5
-	`;
-
 	// const query = `
 	// 	SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
 	// 	json_build_object(
 	// 		'answers', (SELECT json_agg(row_to_json(answers)) FROM "questions")
 	// 	)
 	// 	GROUP BY answers.question_id, questions.question_id
+	// 	LIMIT 5
+	// `;
+
+	const query = `
+		SELECT product_id, JSON_AGG(results) results FROM (
+			SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+
+			json_build_object(
+				"answer_id",
+				json_build_object(
+					'id', answer_id,
+					'body', answer_body,
+					'date', answer_date,
+					'answerer_name', answerer_name,
+					'helpfulness', answer_helpfulness,
+					'photos', '[]'
+				)
+			) answers FROM questions
+			JOIN answers ON answers.question_id=questions.question_id
+			GROUP BY questions.question_id, answers.answer_id
+
+		) results
+		GROUP BY product_id
+		LIMIT 5
+	`;
+
+	// MOST RECENT WORKING VERSION
+	// const query = `
+	// 	SELECT product_id, JSON_AGG(results) FROM (
+	// 		SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+
+	// 		json_build_object(
+	// 			"answer_id",
+	// 			json_build_object(
+	// 				'id', answer_id,
+	// 				'body', answer_body,
+	// 				'date', answer_date,
+	// 				'answerer_name', answerer_name,
+	// 				'helpfulness', answer_helpfulness,
+	// 				'photos', '[]'
+	// 			)
+	// 		) answers FROM questions
+	// 		JOIN answers ON answers.question_id=questions.question_id
+	// 		GROUP BY questions.question_id, answers.answer_id
+
+	// 	) results
+	// 	GROUP BY product_id
+	// 	LIMIT 5
+	// `;
+
+	// AN OLDER ONE THAT ALSO WORKS
+	// const query = `
+	// 	SELECT json_build_object(
+	// 		"answer_id",
+	// 		json_build_object(
+	// 			'id', answer_id,
+	// 			'body', answer_body,
+	// 			'date', answer_date,
+	// 			'answerer_name', answerer_name,
+	// 			'helpfulness', answer_helpfulness
+	// 		)
+	// 	) answers FROM answers
 	// 	LIMIT 5
 	// `;
 
