@@ -49,21 +49,38 @@ let fetch = async (endpoint, cb) => {
 	// 	LIMIT 5
 	// `;
 
-  // Photos query
-	const pQuery = `
-		SELECT JSON_AGG(
-
+  const query = `
+		SELECT answers.answer_id, JSON_AGG(
 			json_build_object(
-				'id', id,
-				'url', url
+				'url', url,
+				'answer_id', answers.answer_id
 			)
+		) photos FROM answers
 
-		) photos FROM answers_photos
-		GROUP BY answer_id
-		LIMIT 5
+		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		GROUP BY answers.answer_id
+
+		LIMIT 10
 	`;
 
-	const query = `
+	//WHERE answers_photos.answer_id=answers.answer_id
+
+
+	// const queryTwo = `
+	// 	SELECT answer_id, JSON_AGG(photos) FROM (
+
+	// 		SELECT json_build_object(
+	// 				'id', id,
+	// 				'url', url,
+	// 				'answer_id', answers_photos.answer_id
+	// 			) photos FROM answers_photos GROUP BY answer_id
+
+	// 	)
+	// 	GROUP BY answers_photos.id
+	// 	LIMIT 5
+	// `;
+
+	const qQuery = `
 		SELECT product_id, JSON_AGG(results) results FROM (
 
 			SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
@@ -80,17 +97,20 @@ let fetch = async (endpoint, cb) => {
 				)
 
 			) answers FROM questions
+
 			JOIN answers ON answers.question_id=questions.question_id
 			GROUP BY questions.question_id, answers.answer_id
 
 		) results
+
 		GROUP BY product_id
 		LIMIT 5
 	`;
 
 	try {
 		const { rows } = await client.query(query);
-		cb(null, rows[0]);
+		cb(null, rows); // just photos
+		// cb(null, rows[0]); // entire questions obj
 	} catch (err) {
 		cb(err);
 	} finally {
