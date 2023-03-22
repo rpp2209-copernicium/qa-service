@@ -70,7 +70,7 @@ let fetch = async (endpoint, cb) => {
 					'date', answer_date,
 					'answerer_name', answerer_name,
 					'helpfulness', answer_helpfulness,
-					'photos', '[]'
+					'photos', json_build_array('[]')
 				)
 			) answers FROM questions
 			JOIN answers ON answers.question_id=questions.question_id
@@ -122,7 +122,7 @@ let fetch = async (endpoint, cb) => {
 
 	try {
 		const { rows } = await client.query(query);
-		cb(null, rows);
+		cb(null, rows[0]);
 	} catch (err) {
 		cb(err);
 	} finally {
