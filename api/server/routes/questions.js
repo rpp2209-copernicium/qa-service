@@ -97,9 +97,8 @@ router.put('/questions/:question_id/helpful', (req, res) => {
 // ✅ Parameters: question_id
 // Query Parameters: page, count
 router.get('/questions/:question_id/answers', (req, res) => {
-	let id = req.params.question_id;
-
-  fetch(`${id}/answers`, (err, payload) => {
+	let url = req.url.slice(1);
+  fetch(url, (err, payload) => {
 		if (err) {
 			console.log('FETCH A\'s Error:', err);
 			res.status(500).json(err);

@@ -19,41 +19,38 @@ let pgPool = new Pool({ connectionString: dbString });
 // GET REQUESTS
 let fetch = async (endpoint, cb) => {
 	const client = await pgPool.connect();
-	let id, table, path, count, page;
+	let table, question_id, product_id, count, page, match;
 
 	// Check the endpoint and do some variable setting based on its value
-	const regex = /^\d+\/answers$/;
-	const qIDRegex = /^(.*)\?product_id=(\d+)$/;
-	// const qIDRegex = /^(.*)\?product_id=(\d+).*/;
-	// const countRegex = /^(.*)\?product_id=&count=(\d+).*/;
+	const answerRegex = /^questions\/(\d+)\/(answers)$/;
+	const urlRegex = /^(questions)(?:\/\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
+	// const qIDRegex = /^(.*)\/\?product_id=(\d+)$/;
+	// const withCountIDRegex = /^(.*)\/\?product_id=(\d+).*/;
+	// const countRegex = /^(.*)\/\?product_id=(\d+)&count=(\d+).*/;
 	// const pageRegex = /^(.*)\?product_id=(\d+)&count=(\d+)&page=(\d+)$/;
-	// console.log('REGEX MATCHED: ', endpoint, endpoint.match(qIDRegex));
 
-	// IF Question ID was provided, grab it
-	if (endpoint.match(regex)) {
-		console.log('Match found', endpoint.match(regex));
-		id = endpoint.split('/')[0];
-		table = endpoint.split('/')[1];
-		console.log('Splitting on backslash-- \nid is:', id, '\ntable name is: ', table);
+	if (endpoint.match(answerRegex)) { // If request was made for answers, set Answer variables
+		match = endpoint.match(answerRegex);
+		table = match[2];
 
-	} else if (endpoint.match(qIDRegex)) { // ELSE, IF path provided, grab it instead
+		if (table === 'answers') {
+			question_id = match[1];
+		}
 
-		console.log('Match found', endpoint.match(qIDRegex));
-		table = endpoint.split('/?product_id=')[0];
-		path = endpoint.split('/?product_id=')[1];
-		console.log('Splitting on Product ID-- path is:', path, 'table name is: ', table);
-
-		// If there is a product ID url param, see if there is also a page/count
-		// if (endpoint.match(countRegex)) {
-		// 	count = endpoint.split('=')[1];
-		// 	console.log('FOUND COUNT PARAM', count);
-
-		// 	if (endpoint.match(pageRegex)) {
-		// 		page = endpoint.split('=')[2];
-		// 		console.log('FOUND PAGE PARAM', page);
-		// 	}
-		// }
+	} else if (endpoint.match(urlRegex)) { // Else, if request was made for questions, set Question variables
+		match = endpoint.match(urlRegex);
+		table = match[1];
+		product_id = match[2];
+		if (match[3]) {
+			count = match[3];
+			page = match[4];
+		}
+	} else {
+		match = 'no match';
 	}
+	// Check Regex grabbed the right variable values
+	// console.log('REGEX Matched: ', match);
+	// console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
 
 	// =============================================
 	//           Build up the Queries...
@@ -84,8 +81,8 @@ let fetch = async (endpoint, cb) => {
 				'photos', json_build_array('test_value.png', 'value_the_second.png')
 			)
 		) results FROM answers
-		${ !id ? '' : `
-			WHERE answers.question_id=${id}
+		${ !question_id ? '' : `
+			WHERE answers.question_id=${question_id}
 			GROUP BY answers.question_id
 		`}
 	`;
@@ -112,7 +109,7 @@ let fetch = async (endpoint, cb) => {
 			GROUP BY questions.question_id, answers.answer_id
 			ORDER BY questions.question_id DESC
 		) results
-		${ !path ? '' : `WHERE results.product_id='${path}'`}
+		${ !product_id ? '' : `WHERE results.product_id='${product_id}'`}
 		GROUP BY results.product_id
 	`;
 
@@ -135,17 +132,16 @@ let fetch = async (endpoint, cb) => {
 	// =============================================
 	const qString = ((table === 'answers') ?
 		`${aQuery}`
-		: `${ !path ? 'SELECT * FROM questions' : `${qIDQuery}`}`
+		: `${ !product_id ? 'SELECT * FROM questions' : `${qIDQuery}`}`
 	);
 
 	const query = `${qString} LIMIT 15`;
-
 	console.log('Final Query String was: ', query);
 
 	// Finally, execute the query and send back the results
 	try {
 		const { rows } = await client.query(query);
-		const result = (!path && table !== 'answers') ? rows : rows[0];
+		const result = (!product_id && table !== 'answers') ? rows : rows[0];
 		cb(null, result);
 	} catch (err) {
 		cb(err);
