@@ -19,12 +19,15 @@ let pgPool = new Pool({ connectionString: dbString });
 // GET REQUESTS
 let fetch = async (endpoint, cb) => {
 	const client = await pgPool.connect();
-	let id, path, table;
+	let id, table, path, count, page;
 
 	// Check the endpoint and do some variable setting based on its value
 	const regex = /^\d+\/answers$/;
-	const pathRegex = /^(.*)\?product_id=(\d+)$/;
-	console.log('REGEX MATCHED: ', endpoint, endpoint.match(pathRegex));
+	const qIDRegex = /^(.*)\?product_id=(\d+)$/;
+	// const qIDRegex = /^(.*)\?product_id=(\d+).*/;
+	// const countRegex = /^(.*)\?product_id=&count=(\d+).*/;
+	// const pageRegex = /^(.*)\?product_id=(\d+)&count=(\d+)&page=(\d+)$/;
+	// console.log('REGEX MATCHED: ', endpoint, endpoint.match(qIDRegex));
 
 	// IF Question ID was provided, grab it
 	if (endpoint.match(regex)) {
@@ -33,29 +36,58 @@ let fetch = async (endpoint, cb) => {
 		table = endpoint.split('/')[1];
 		console.log('Splitting on backslash-- \nid is:', id, '\ntable name is: ', table);
 
-	} else if (endpoint.match(pathRegex)) { // ELSE, IF path provided, grab it instead
+	} else if (endpoint.match(qIDRegex)) { // ELSE, IF path provided, grab it instead
 
-		console.log('Match found', endpoint.match(pathRegex));
+		console.log('Match found', endpoint.match(qIDRegex));
 		table = endpoint.split('/?product_id=')[0];
 		path = endpoint.split('/?product_id=')[1];
 		console.log('Splitting on Product ID-- path is:', path, 'table name is: ', table);
+
+		// If there is a product ID url param, see if there is also a page/count
+		// if (endpoint.match(countRegex)) {
+		// 	count = endpoint.split('=')[1];
+		// 	console.log('FOUND COUNT PARAM', count);
+
+		// 	if (endpoint.match(pageRegex)) {
+		// 		page = endpoint.split('=')[2];
+		// 		console.log('FOUND PAGE PARAM', page);
+		// 	}
+		// }
 	}
 
 	// =============================================
 	//           Build up the Queries...
 	// =============================================
+	// page testing
+	// ${
+	// 	(page && count) ? `json_build_object(
+	// 		'page', ${page}
+	// 		'count', ${count}
+	// 	)`
+	// 	: (page && !count) ? `json_build_object('page', ${page})`
+	// 	: (count && !page) ? `json_build_object('count', ${count})`
+	// 	: ''
+	// }
+
 	// ANSWERS QUERY STRING
 	const aQuery = `
-		SELECT json_agg(
+		SELECT answers.question_id,
+
+		json_agg(
 			json_build_object(
 				'answer_id', answer_id,
 				'body', answer_body,
 				'date', answer_date,
 				'answerer_name', answerer_name,
 				'answer_helpfulness', answer_helpfulness,
+				'question_id', question_id,
 				'photos', json_build_array('test_value.png', 'value_the_second.png')
 			)
-		) results FROM answers WHERE ${ !id ? '' : `answers.question_id=${id}`}
+		) results FROM answers
+		${ !id ? '' : `
+			WHERE answers.question_id=${id}
+			GROUP BY answers.question_id
+		`}
 	`;
 	// ✅ QUESTIONS QUERY STRING
 	const qIDQuery = `
@@ -124,6 +156,7 @@ let fetch = async (endpoint, cb) => {
 
 // PUT REQUESTS
 let update = (endpoint, cb) => {
+
 	// todo
 	try {
 		console.log('in update / trying to update...');
