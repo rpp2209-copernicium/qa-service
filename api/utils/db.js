@@ -24,63 +24,44 @@ let pgPool = new Pool({ connectionString: dbString });
 
 let fetch = async (endpoint, cb) => {
 	const client = await pgPool.connect();
-	let id, table;
+	let id, path, table;
 
 	// Check if the endpoint is /question_id/answers
 	// and do some variable setting if so
 	const regex = /^\d+\/answers$/;
+	const pathRegex = /^(.*)\?product_id=(\d+)$/;
+	console.log('match????', endpoint, endpoint.match(pathRegex));
 
 	if (endpoint.match(regex)) {
 		console.log('Match found', endpoint.match(regex));
 		id = endpoint.split('/')[0];
 		table = endpoint.split('/')[1];
 		console.log('Splitting on backslash-- id is:', id, 'table name is: ', table);
+
+	} else if (endpoint.match(pathRegex)) {
+
+		console.log('Match found', endpoint.match(pathRegex));
+		table = endpoint.split('/?product_id=')[0];
+		path = endpoint.split('/?product_id=')[1];
+		console.log('Splitting on Product ID-- path is:', path, 'table name is: ', table);
 	}
 
-	// const qString = ((table === 'answers') ?
-	// 	'SELECT answer_id, question_id, answer_body, answer_date, answerer_name, answerer_email, answer_helpfulness, reported'
-	// 	: 'SELECT questions.question_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported'
-	// );
+  // const qQuery = `
+	// 	SELECT answers.answer_id, JSON_AGG(
+	// 		json_build_object(
+	// 			'url', url,
+	// 			'answer_id', answers.answer_id
+	// 		)
+	// 	) photos FROM answers
 
-	// const query = `
-	// 	${qString}
-	// 	FROM ${table || 'questions'}
-	// 	${ table === 'answers' ? `WHERE questions.question_id=${id}` : 'INNER JOIN answers ON questions.question_id = answers.question_id' }
-	// 	LIMIT 5
+	// 	JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+	// 	GROUP BY answers.answer_id
+
+	// 	LIMIT 10
 	// `;
-
-  const query = `
-		SELECT answers.answer_id, JSON_AGG(
-			json_build_object(
-				'url', url,
-				'answer_id', answers.answer_id
-			)
-		) photos FROM answers
-
-		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
-		GROUP BY answers.answer_id
-
-		LIMIT 10
-	`;
 
 	//WHERE answers_photos.answer_id=answers.answer_id
-
-
-	// const queryTwo = `
-	// 	SELECT answer_id, JSON_AGG(photos) FROM (
-
-	// 		SELECT json_build_object(
-	// 				'id', id,
-	// 				'url', url,
-	// 				'answer_id', answers_photos.answer_id
-	// 			) photos FROM answers_photos GROUP BY answer_id
-
-	// 	)
-	// 	GROUP BY answers_photos.id
-	// 	LIMIT 5
-	// `;
-
-	const qQuery = `
+	const aQuery = `
 		SELECT product_id, JSON_AGG(results) results FROM (
 
 			SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
@@ -93,24 +74,59 @@ let fetch = async (endpoint, cb) => {
 					'date', answer_date,
 					'answerer_name', answerer_name,
 					'helpfulness', answer_helpfulness,
-					'photos', json_build_array('test', 'value')
+					'photos', json_build_array('test_value.png', 'value_the_second.png')
 				)
 
 			) answers FROM questions
 
 			JOIN answers ON answers.question_id=questions.question_id
 			GROUP BY questions.question_id, answers.answer_id
-
+			ORDER BY questions.question_id DESC
 		) results
+	`;
 
-		GROUP BY product_id
+	const qString = ((table === 'answers') ?
+		`${aQuery}`
+		: 'SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported'
+	);
+
+	const query = `
+		${qString}
+		${ table === 'answers' ? `GROUP BY product_id` : !path ? 'FROM questions GROUP BY questions.product_id, questions.question_id' : `FROM questions WHERE questions.product_id='${path}'` }
 		LIMIT 5
 	`;
 
+	// STANDALONE WORKS - OG
+	// const query = `
+	// 	SELECT product_id, JSON_AGG(results) results FROM (
+
+	// 		SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+	// 		json_build_object(
+	// 			"answer_id",
+
+	// 			json_build_object(
+	// 				'id', answer_id,
+	// 				'body', answer_body,
+	// 				'date', answer_date,
+	// 				'answerer_name', answerer_name,
+	// 				'helpfulness', answer_helpfulness,
+	// 				'photos', json_build_array('test_value.png', 'value_the_second.png')
+	// 			)
+
+	// 		) answers FROM questions
+
+	// 		JOIN answers ON answers.question_id=questions.question_id
+	// 		GROUP BY questions.question_id, answers.answer_id
+
+	// 	) results
+
+	// 	GROUP BY product_id
+	// 	LIMIT 5
+	// `;
+
 	try {
 		const { rows } = await client.query(query);
-		cb(null, rows); // just photos
-		// cb(null, rows[0]); // entire questions obj
+		cb(null, (table === 'answers' ? rows[0] : rows));
 	} catch (err) {
 		cb(err);
 	} finally {
@@ -118,16 +134,20 @@ let fetch = async (endpoint, cb) => {
 	}
 };
 
-let update = () => {
-	console.log('updating record in the database...todo');
+let update = (endpoint, cb) => {
+	// todo
+	try {
+		console.log('in update / trying to update...');
+		cb(null, 'temp update success string')
+	} catch(err) {
+		cb(err)
+	}
+
 };
 
 let save = async (table, question, cb) => {
 	const client = await pgPool.connect();
 	const { product_id, question_body, question_date, asker_name, asker_email, question_helpfulness, reported } = question;
-
-	// Hard-coded Test Query String
-	// const query = `INSERT INTO questions(product_id, body, date_written, asker_name, asker_email, reported, helpful) values('1', 'another test body', 1638855284662, 'fuck', 'FUCK', false, 0);`;
 
 	const query = `INSERT INTO ${table}(
 		product_id, question_body, question_date, asker_name, asker_email, question_helpfulness, reported
@@ -150,12 +170,12 @@ let save = async (table, question, cb) => {
 // TEST INSERT WORKS
 // const q = {
 // 	product_id: '1',
-// 	body: 'test',
-// 	date_written: 1638855284662,
+// 	question_body: 'test',
+// 	question_date: 1638855284662,
 // 	asker_name: 'linda',
 // 	asker_email: 'linda@linda.com',
+// 	question_helpfulness: 0
 // 	reported: false,
-// 	helpful: 0
 // };
 
 // // ==============================olumn "test" does not exist at character 121
