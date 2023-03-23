@@ -55,9 +55,7 @@ let fetch = async (endpoint, cb) => {
 	// =============================================
 	//           Build up the Queries...
 	// =============================================
-	// page testing
-
-	// ANSWERS QUERY STRING
+	// ✅ ANSWERS QUERY STRING
 	const aQuery = `
 	SELECT answers.question_id,
 
@@ -80,9 +78,10 @@ let fetch = async (endpoint, cb) => {
 			GROUP BY answers.question_id
 		`}
 	`;
+
 	// ✅ QUESTIONS QUERY STRING
-	// json_object_keys('{ "page" : ${page || 1} }') page, ${page || 1},
 	const qIDQuery = `
+
 		SELECT results.product_id,
 
 		to_json(${page || 1}) page,
@@ -113,6 +112,40 @@ let fetch = async (endpoint, cb) => {
 		GROUP BY results.product_id
 	`;
 
+
+	const test = `
+		SELECT r.product_id,
+
+		json_agg (r) results FROM (
+
+			SELECT DISTINCT on (questions.question_id) questions.question_id,
+				questions.product_id,
+				questions.question_body,
+				questions.question_date,
+				questions.asker_name,
+				questions.question_helpfulness,
+				questions.reported,
+
+				json_build_object(
+					"answer_id",
+					json_build_object(
+						'id', answer_id,
+						'body', answer_body,
+						'date', answer_date,
+						'answerer_name', answerer_name
+					)
+				) answers FROM questions
+
+				JOIN answers ON answers.question_id=questions.question_id
+				GROUP BY questions.question_id, answers.answer_id
+				ORDER BY questions.question_id DESC
+
+		) r
+		WHERE r.product_id='6'
+		GROUP BY r.product_id;
+	`;
+
+	// ❌ PHOTOS QUERY STRING (TODO)
 	// const photosQuery = `
 	// 	SELECT answers.answer_id, JSON_AGG(
 	// 		json_build_object(
@@ -130,13 +163,14 @@ let fetch = async (endpoint, cb) => {
 	// =============================================
 	//          FINAL/AGGREGATED Q STRINGS
 	// =============================================
-	const qString = ((table === 'answers') ?
+	// If table is answers, run Answers query, else run Questions query
+	const qString = (table === 'answers' ?
 		`${aQuery}`
-		: `${ !product_id ? 'SELECT * FROM questions' : `${qIDQuery}`}`
+		: `${ !product_id ? 'SELECT * FROM questions LIMIT 15' : `${qIDQuery}`}`
 	);
 
-	const query = `${qString} LIMIT 15`;
-	console.log('Final Query String was: ', query);
+	const query = `${qString}`;
+	console.log('GET EP Query String was: ', query);
 
 	// Finally, execute the query and send back the results
 	try {
@@ -151,14 +185,26 @@ let fetch = async (endpoint, cb) => {
 };
 
 // PUT REQUESTS
-let update = (endpoint, cb) => {
+let update = async (endpoint, payload, cb) => {
+	const client = await pgPool.connect();
 
-	// todo
+	let table = payload.table || 'questions';
+	let col = endpoint === 'helpful' ? "question_helpfulness" : "reported";
+
+	const { rows } = await client.query(`SELECT ${col} FROM ${table} WHERE question_id=${payload.id}`);
+	const nextSum = rows[0].question_helpfulness + 1;
+	const query = `UPDATE ${table} SET ${col} = ${col === 'question_helpfulness' ? `${nextSum}` : true } WHERE question_id=${payload.id}`;
+
 	try {
-		console.log('in update / trying to update...');
-		cb(null, 'temp update success string')
-	} catch(err) {
-		cb(err)
+		// console.log('UPDATE Q String: ', query);
+		console.log('Sum BEFORE: ', nextSum - 1, 'After: ', nextSum);
+		const { rows } = await client.query(query);
+		cb(null, rows);
+	} catch (err) {
+		cb(err);
+
+	} finally {
+		client.release(); // Release connection back to the pool
 	}
 
 };
@@ -166,16 +212,35 @@ let update = (endpoint, cb) => {
 // POSTS REQUESTS
 let save = async (table, question, cb) => {
 	const client = await pgPool.connect();
-	const { product_id, question_body, question_date, asker_name, asker_email, question_helpfulness, reported } = question;
+	const { product_id, question_body, asker_name, asker_email } = question;
 
-	const query = `INSERT INTO ${table}(
-		product_id, question_body, question_date, asker_name, asker_email, question_helpfulness, reported
-		values('${product_id}', '${question_body}', '${question_date}', '${asker_name}', '${asker_email}', ${question_helpfulness}, ${reported})
+	const query = `
+		INSERT INTO ${table}("product_id", "question_body", "question_date", "asker_name", "asker_email", "question_helpfulness", "reported")
+		VALUES('${product_id}', '${question_body}', ${Date.now()}, '${asker_name}', '${asker_email}', 0, false)
 	`;
 
 	try {
+		// console.log('INSERT Question Q String', query);
 		const { rows } = await client.query(query);
-		// console.log('INSERT Question Result', result);
+		cb(null, rows);
+
+	} catch (err) {
+		cb(err);
+
+	} finally {
+		client.release(); // Release connection back to the pool
+	}
+};
+
+// FETCH DB ROW COUNT
+let fetchRowCount = async (table, cb) => {
+	const client = await pgPool.connect();
+	const query = `SELECT COUNT(*) FROM ${table || 'questions'}`;
+
+	try {
+		// console.log('Fetch ROW COUNT Query String: ', query);
+		const { rows } = await client.query(query);
+		console.log('ROW COUNT RESULT', rows);
 		cb(null, rows);
 
 	} catch (err) {
@@ -206,4 +271,4 @@ let save = async (table, question, cb) => {
 // 	}
 // });
 
-module.exports = { fetch, save, update };
+module.exports = { fetch, save, update, fetchRowCount };

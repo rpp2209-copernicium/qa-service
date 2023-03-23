@@ -14,8 +14,8 @@ CREATE TABLE questions(
 	question_date BIGSERIAL,
 	asker_name VARCHAR(255) NOT NULL,
 	asker_email VARCHAR(255) NOT NULL,
-	reported BOOLEAN,
-	question_helpfulness INT
+	question_helpfulness INT,
+	reported BOOLEAN
 );
 
 SAVEPOINT q_db_created;
@@ -31,13 +31,13 @@ CREATE TABLE answers(
 	answerer_email VARCHAR(255),
 	answer_helpfulness INT,
 	reported BOOLEAN,
-	question_id INT REFERENCES questions NOT NULL
+	question_id SERIAL NOT NULL,
+	CONSTRAINT FK_question_id FOREIGN KEY (question_id) REFERENCES questions
 );
 
 SAVEPOINT a_db_created;
 
-create index question_id_index
-  on answers (question_id);
+CREATE INDEX question_id_index ON answers (question_id);
 
 SAVEPOINT qid_index_created;
 
@@ -47,13 +47,13 @@ SAVEPOINT qid_index_created;
 CREATE TABLE answers_photos(
 	id SERIAL PRIMARY KEY NOT NULL,
 	url VARCHAR(255),
-	answer_id INT REFERENCES answers NOT NULL
+	answer_id SERIAL NOT NULL,
+	CONSTRAINT FK_answer_id FOREIGN KEY (answer_id) REFERENCES answers
 );
 
 SAVEPOINT p_db_created;
 
-create index answer_id_index
-  on answers_photos (answer_id);
+CREATE INDEX answer_id_index ON answers_photos (answer_id);
 
 SAVEPOINT aid_index_created;
 
