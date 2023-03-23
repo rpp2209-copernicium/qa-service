@@ -22,12 +22,8 @@ let fetch = async (endpoint, cb) => {
 	let table, question_id, product_id, count, page, match;
 
 	// Check the endpoint and do some variable setting based on its value
-	const answerRegex = /^questions\/(\d+)\/(answers)$/;
+	const answerRegex = /^questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
 	const urlRegex = /^(questions)(?:\/\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
-	// const qIDRegex = /^(.*)\/\?product_id=(\d+)$/;
-	// const withCountIDRegex = /^(.*)\/\?product_id=(\d+).*/;
-	// const countRegex = /^(.*)\/\?product_id=(\d+)&count=(\d+).*/;
-	// const pageRegex = /^(.*)\?product_id=(\d+)&count=(\d+)&page=(\d+)$/;
 
 	if (endpoint.match(answerRegex)) { // If request was made for answers, set Answer variables
 		match = endpoint.match(answerRegex);
@@ -35,6 +31,10 @@ let fetch = async (endpoint, cb) => {
 
 		if (table === 'answers') {
 			question_id = match[1];
+			if (match[3]) {
+				count = match[3];
+				page = match[4];
+			}
 		}
 
 	} else if (endpoint.match(urlRegex)) { // Else, if request was made for questions, set Question variables
@@ -46,29 +46,23 @@ let fetch = async (endpoint, cb) => {
 			page = match[4];
 		}
 	} else {
-		match = 'no match';
+		match = 'no match'; // set error string if no match found
 	}
 	// Check Regex grabbed the right variable values
-	// console.log('REGEX Matched: ', match);
-	// console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
+	console.log('REGEX Matched: ', match);
+	console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
 
 	// =============================================
 	//           Build up the Queries...
 	// =============================================
 	// page testing
-	// ${
-	// 	(page && count) ? `json_build_object(
-	// 		'page', ${page}
-	// 		'count', ${count}
-	// 	)`
-	// 	: (page && !count) ? `json_build_object('page', ${page})`
-	// 	: (count && !page) ? `json_build_object('count', ${count})`
-	// 	: ''
-	// }
 
 	// ANSWERS QUERY STRING
 	const aQuery = `
-		SELECT answers.question_id,
+	SELECT answers.question_id,
+
+		to_json(${page || 1}) page,
+		to_json(${count || 5}) count,
 
 		json_agg(
 			json_build_object(
@@ -87,8 +81,14 @@ let fetch = async (endpoint, cb) => {
 		`}
 	`;
 	// ✅ QUESTIONS QUERY STRING
+	// json_object_keys('{ "page" : ${page || 1} }') page, ${page || 1},
 	const qIDQuery = `
-		SELECT results.product_id, JSON_AGG(results) results FROM (
+		SELECT results.product_id,
+
+		to_json(${page || 1}) page,
+		to_json(${count || 5}) count,
+
+		JSON_AGG(results) results FROM (
 
 			SELECT DISTINCT on (questions.question_id) questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
 			json_build_object(
