@@ -26,7 +26,7 @@ router.get('/questions', async (req, res) => {
 	});
 });
 
-// GET ROW COUNTS
+// ✅ GET ROW COUNTS
 router.get('/questions/:table_name/rows', (req, res) => {
 	let table = req.params['table_name'];
 
@@ -82,8 +82,8 @@ router.put('/questions/:question_id/helpful', (req, res) => {
 
 });
 
-// // Report Question
-// // PUT /qa/questions/:question_id/report
+// Report Question
+// PUT /qa/questions/:question_id/report
 // Parameters: question_id
 router.put('/questions/:question_id/report', (req, res) => {
 	update('reported', { id: req.params['question_id'], value: true }, (err, payload) => {
@@ -97,9 +97,9 @@ router.put('/questions/:question_id/report', (req, res) => {
 	});
 });
 
-// // =============================================
-// //                Answers
-// // =============================================
+// =============================================
+//                Answers
+// =============================================
 // ✅ Answers List
 // GET /qa/questions/:question_id/answers
 

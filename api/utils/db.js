@@ -16,7 +16,7 @@ let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`
 // =============================================
 let pgPool = new Pool({ connectionString: dbString });
 
-// GET REQUESTS
+// GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
 	const client = await pgPool.connect();
 	let table, question_id, product_id, count, page, match;
@@ -25,7 +25,8 @@ let fetch = async (endpoint, cb) => {
 	const answerRegex = /^questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
 	const urlRegex = /^(questions)(?:\/\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
 
-	if (endpoint.match(answerRegex)) { // If request was made for answers, set Answer variables
+	// If request was made for answers, set Answer variables
+	if (endpoint.match(answerRegex)) {
 		match = endpoint.match(answerRegex);
 		table = match[2];
 
@@ -49,8 +50,8 @@ let fetch = async (endpoint, cb) => {
 		match = 'no match'; // set error string if no match found
 	}
 	// Check Regex grabbed the right variable values
-	console.log('REGEX Matched: ', match);
-	console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
+	// console.log('REGEX Matched: ', match);
+	// console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
 
 	// =============================================
 	//           Build up the Queries...
@@ -164,16 +165,14 @@ let fetch = async (endpoint, cb) => {
 	//          FINAL/AGGREGATED Q STRINGS
 	// =============================================
 	// If table is answers, run Answers query, else run Questions query
-	const qString = (table === 'answers' ?
+	const query = (table === 'answers' ?
 		`${aQuery}`
 		: `${ !product_id ? 'SELECT * FROM questions LIMIT 15' : `${qIDQuery}`}`
 	);
 
-	const query = `${qString}`;
-	console.log('GET EP Query String was: ', query);
-
 	// Finally, execute the query and send back the results
 	try {
+		// console.log('GET EP Query String was: ', query);
 		const { rows } = await client.query(query);
 		const result = (!product_id && table !== 'answers') ? rows : rows[0];
 		cb(null, result);
@@ -184,7 +183,7 @@ let fetch = async (endpoint, cb) => {
 	}
 };
 
-// PUT REQUESTS
+// PUT REQUESTS (Report a Question/Answer or mark it Helpful)
 let update = async (endpoint, payload, cb) => {
 	const client = await pgPool.connect();
 
@@ -197,7 +196,7 @@ let update = async (endpoint, payload, cb) => {
 
 	try {
 		// console.log('UPDATE Q String: ', query);
-		console.log('Sum BEFORE: ', nextSum - 1, 'After: ', nextSum);
+		// console.log('Sum BEFORE: ', nextSum - 1, 'After: ', nextSum);
 		const { rows } = await client.query(query);
 		cb(null, rows);
 	} catch (err) {
@@ -209,7 +208,7 @@ let update = async (endpoint, payload, cb) => {
 
 };
 
-// POSTS REQUESTS
+// POSTS REQUESTS (submit a new Question or Answer)
 let save = async (table, question, cb) => {
 	const client = await pgPool.connect();
 	const { product_id, question_body, asker_name, asker_email } = question;
@@ -250,25 +249,5 @@ let fetchRowCount = async (table, cb) => {
 		client.release(); // Release connection back to the pool
 	}
 };
-
-// TEST INSERT WORKS
-// const q = {
-// 	product_id: '1',
-// 	question_body: 'test',
-// 	question_date: 1638855284662,
-// 	asker_name: 'linda',
-// 	asker_email: 'linda@linda.com',
-// 	question_helpfulness: 0
-// 	reported: false,
-// };
-
-// // ==============================olumn "test" does not exist at character 121
-// save(q, (err, payload) => {
-// 	if (err) {
-// 		console.log('SAVE ERROR', err);
-// 	} else {
-// 		console.log('fucking worked. finally', payload);
-// 	}
-// });
 
 module.exports = { fetch, save, update, fetchRowCount };
