@@ -46,7 +46,7 @@ let fetch = async (endpoint, cb) => {
 		console.log('Splitting on Product ID-- path is:', path, 'table name is: ', table);
 	}
 
-  // const qQuery = `
+  // const otherQuery = `
 	// 	SELECT answers.answer_id, JSON_AGG(
 	// 		json_build_object(
 	// 			'url', url,
@@ -61,10 +61,10 @@ let fetch = async (endpoint, cb) => {
 	// `;
 
 	//WHERE answers_photos.answer_id=answers.answer_id
-	const aQuery = `
-		SELECT product_id, JSON_AGG(results) results FROM (
+	const qQuery = `
+		SELECT results.product_id, JSON_AGG(results) results FROM (
 
-			SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+			SELECT DISTINCT on (questions.question_id) questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
 			json_build_object(
 				"answer_id",
 
@@ -83,50 +83,25 @@ let fetch = async (endpoint, cb) => {
 			GROUP BY questions.question_id, answers.answer_id
 			ORDER BY questions.question_id DESC
 		) results
+		${ !path ? '' : `WHERE results.product_id='${path}'`}
+		GROUP BY results.product_id
 	`;
 
 	const qString = ((table === 'answers') ?
-		`${aQuery}`
-		: 'SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported'
+		'SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported'
+		: `${qQuery}`
 	);
 
 	const query = `
 		${qString}
-		${ table === 'answers' ? `GROUP BY product_id` : !path ? 'FROM questions GROUP BY questions.product_id, questions.question_id' : `FROM questions WHERE questions.product_id='${path}'` }
+		${ table === 'answers' ? `GROUP BY product_id` : '' }
 		LIMIT 5
 	`;
 
-	// STANDALONE WORKS - OG
-	// const query = `
-	// 	SELECT product_id, JSON_AGG(results) results FROM (
-
-	// 		SELECT questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
-	// 		json_build_object(
-	// 			"answer_id",
-
-	// 			json_build_object(
-	// 				'id', answer_id,
-	// 				'body', answer_body,
-	// 				'date', answer_date,
-	// 				'answerer_name', answerer_name,
-	// 				'helpfulness', answer_helpfulness,
-	// 				'photos', json_build_array('test_value.png', 'value_the_second.png')
-	// 			)
-
-	// 		) answers FROM questions
-
-	// 		JOIN answers ON answers.question_id=questions.question_id
-	// 		GROUP BY questions.question_id, answers.answer_id
-
-	// 	) results
-
-	// 	GROUP BY product_id
-	// 	LIMIT 5
-	// `;
-
 	try {
 		const { rows } = await client.query(query);
-		cb(null, (table === 'answers' ? rows[0] : rows));
+		cb(null, rows[0])
+		// cb(null, (table === 'answers' ? rows[0] : rows));
 	} catch (err) {
 		cb(err);
 	} finally {
