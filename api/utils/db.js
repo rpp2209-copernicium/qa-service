@@ -82,35 +82,27 @@ let fetch = async (endpoint, cb) => {
 
 	// ✅ QUESTIONS QUERY STRING
 	const qIDQuery = `
+		SELECT DISTINCT on (questions.question_id) questions.question_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
 
-		SELECT results.product_id,
+		json_build_object(
+			"id",
 
-		to_json(${page || 1}) page,
-		to_json(${count || 5}) count,
-
-		JSON_AGG(results) results FROM (
-
-			SELECT DISTINCT on (questions.question_id) questions.question_id, questions.product_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
 			json_build_object(
-				"answer_id",
+				'id', answers.answer_id,
+				'body', answer_body,
+				'date', answer_date,
+				'answerer_name', answerer_name,
+				'helpfulness', answer_helpfulness,
+				'photos', JSON_AGG(answers_photos.url)
+			)
 
-				json_build_object(
-					'id', answer_id,
-					'body', answer_body,
-					'date', answer_date,
-					'answerer_name', answerer_name,
-					'helpfulness', answer_helpfulness,
-					'photos', json_build_array('test_value.png', 'value_the_second.png')
-				)
+		) answers FROM questions
 
-			) answers FROM questions
-
-			JOIN answers ON answers.question_id=questions.question_id
-			GROUP BY questions.question_id, answers.answer_id
-			ORDER BY questions.question_id DESC
-		) results
-		${ !product_id ? '' : `WHERE results.product_id='${product_id}'`}
-		GROUP BY results.product_id
+		JOIN answers ON answers.question_id=questions.question_id
+		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		${ !product_id ? '' : `WHERE questions.product_id='${product_id}'`}
+		GROUP BY questions.question_id, answers.answer_id, answers_photos.id
+		ORDER BY questions.question_id DESC
 	`;
 
 
@@ -174,7 +166,7 @@ let fetch = async (endpoint, cb) => {
 	try {
 		// console.log('GET EP Query String was: ', query);
 		const { rows } = await client.query(query);
-		const result = (!product_id && table !== 'answers') ? rows : rows[0];
+		const result = (table === 'answers') ? rows[0] : rows;
 		cb(null, result);
 	} catch (err) {
 		cb(err);

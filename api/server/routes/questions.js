@@ -9,18 +9,17 @@ const { fetch, save, update, fetchRowCount } = require('../../utils/db.js');
 //                Questions
 // =============================================
 // GET /qa/questions
-
 // Parameters: product_id (int), page (int), count (int)
 router.get('/questions', async (req, res) => {
 	let url = req.url.slice(1)
-	console.log('URL LOG IS RIGHT HERE!', url);
+	// console.log('URL LOG IS RIGHT HERE!', url);
 
 	await fetch(url, (err, payload) => {
 		if (err) {
 			console.log('FETCH Q\'s Error:', err);
 			res.status(500).json(err);
 		} else {
-			console.log('Q Data', payload);
+			// console.log('Q Data', payload);
 			res.status(200).json(payload); // Expected Status: 200 OK
 		}
 	});
