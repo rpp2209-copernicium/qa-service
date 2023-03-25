@@ -105,39 +105,6 @@ let fetch = async (endpoint, cb) => {
 		ORDER BY questions.question_id DESC
 	`;
 
-
-	const test = `
-		SELECT r.product_id,
-
-		json_agg (r) results FROM (
-
-			SELECT DISTINCT on (questions.question_id) questions.question_id,
-				questions.product_id,
-				questions.question_body,
-				questions.question_date,
-				questions.asker_name,
-				questions.question_helpfulness,
-				questions.reported,
-
-				json_build_object(
-					"answer_id",
-					json_build_object(
-						'id', answer_id,
-						'body', answer_body,
-						'date', answer_date,
-						'answerer_name', answerer_name
-					)
-				) answers FROM questions
-
-				JOIN answers ON answers.question_id=questions.question_id
-				GROUP BY questions.question_id, answers.answer_id
-				ORDER BY questions.question_id DESC
-
-		) r
-		WHERE r.product_id='6'
-		GROUP BY r.product_id;
-	`;
-
 	// ❌ PHOTOS QUERY STRING (TODO)
 	// const photosQuery = `
 	// 	SELECT answers.answer_id, JSON_AGG(
@@ -176,15 +143,17 @@ let fetch = async (endpoint, cb) => {
 };
 
 // PUT REQUESTS (Report a Question/Answer or mark it Helpful)
-let update = async (endpoint, payload, cb) => {
+let update = async (endpoint, body, cb) => {
 	const client = await pgPool.connect();
 
-	let table = payload.table || 'questions';
-	let col = endpoint === 'helpful' ? "question_helpfulness" : "reported";
+	let table = body.table || 'questions';
+	let col = (endpoint === 'helpful' && table === 'answers') ? "answer_helpfulness"
+	  : (table === 'questions') ? "question_helpfulness"
+		: "reported";
 
-	const { rows } = await client.query(`SELECT ${col} FROM ${table} WHERE question_id=${payload.id}`);
-	const nextSum = rows[0].question_helpfulness + 1;
-	const query = `UPDATE ${table} SET ${col} = ${col === 'question_helpfulness' ? `${nextSum}` : true } WHERE question_id=${payload.id}`;
+	const { rows } = await client.query(`SELECT ${col} FROM ${table} WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}`);
+	const nextSum = rows[0][col] + 1;
+	const query = `UPDATE ${table} SET ${col} = ${(col === 'question_helpfulness' || col === 'answer_helpfulness') ? `${nextSum}` : true } WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}`;
 
 	try {
 		// console.log('UPDATE Q String: ', query);
@@ -201,17 +170,25 @@ let update = async (endpoint, payload, cb) => {
 };
 
 // POSTS REQUESTS (submit a new Question or Answer)
-let save = async (table, question, cb) => {
+let save = async (table, qaObj, cb) => {
 	const client = await pgPool.connect();
-	const { product_id, question_body, asker_name, asker_email } = question;
+	if (table === 'answers') {
+		const { answer_body, answerer_name, answerer_email, question_id } = qaObj;
+	} else if (table === 'questions') {
+		const { product_id, question_body, asker_name, asker_email } = qaObj;
+	}
 
-	const query = `
+	const query = (table === 'questions') ? `
 		INSERT INTO ${table}("product_id", "question_body", "question_date", "asker_name", "asker_email", "question_helpfulness", "reported")
 		VALUES('${product_id}', '${question_body}', ${Date.now()}, '${asker_name}', '${asker_email}', 0, false)
+	`
+	: `
+		INSERT INTO ${table}("answer_body", "answer_date",  "answerer_name", "asker_name", "answerer_email", "answer_helpfulness", "reported")
+		VALUES('${answer_body}', ${Date.now()}, '${answerer_name}', '${answerer_email}', 0, false)
 	`;
 
 	try {
-		// console.log('INSERT Question Q String', query);
+		// console.log('INSERT String', query);
 		const { rows } = await client.query(query);
 		cb(null, rows);
 

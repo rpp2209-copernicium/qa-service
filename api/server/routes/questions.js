@@ -44,7 +44,7 @@ router.get('/questions/:table_name/rows', (req, res) => {
 // POST /qa/questions
 // Body Parameters: body, name, email, product_id
 router.post('/questions', async (req, res) => {
-	console.log('GOT BODY', req.body);
+	console.log('GOT Add Q BODY', req.body);
 
 	const question = {
 		product_id: req.body.product_id,
@@ -75,7 +75,7 @@ router.put('/questions/:question_id/helpful', (req, res) => {
 			res.status(500).send(err);
 		} else {
 			console.log('Report Question HELPFUL SUCCESS: ', payload);
-			res.status(204).send('(temp/todo) NO CONTENT'); // Expected Status: 204 NO CONTENT
+			res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
 		}
 	});
 
@@ -117,21 +117,45 @@ router.get('/questions/:question_id/answers', (req, res) => {
 	});
 });
 
-// // Add an Answer
-// // POST /qa/questions/:question_id/answers
-// router.post('/questions/:question_id/answers', (req, res) => {
-// 	// Parameters: question_id
-// 	// Body Parameters: body, name, email, photos
-// 	save();
-// 	res.status(201).send('CREATED'); // Expected Response: Status: 201 CREATED
-// });
+// Add an Answer
+// POST /qa/questions/:question_id/answers
+router.post('/questions/:question_id/answers', async (req, res) => {
+	// Parameters: question_id
+	// Body Parameters: body, name, email, photos
+	console.log('GOT Create A BODY', req.body);
 
-// // Mark Answer as Helpful
-// // PUT /qa/answers/:answer_id/helpful
-// router.put('/answers/:answer_id/helpful', (req, res) => {
-// 	// Parameters: answer_id
-// 	res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
-// });
+	const answer = {
+		answer_body: req.body,
+		answerer_name: req.answerer_name,
+		answerer_email: req.answerer_email,
+		question_id: req.params.question_id
+	};
+
+	await save('answers', answer, (err, payload) => {
+		if (err) {
+			console.log('POST A Error:', err)
+			res.status(500).json(err);
+		} else {
+			console.log('SAVE A PAYLOAD: ', payload);
+			res.status(201).send('CREATED'); // Expected Status: 201 CREATED
+		}
+	});
+});
+
+// Mark Answer as Helpful
+// PUT /qa/answers/:answer_id/helpful
+router.put('/answers/:answer_id/helpful', async (req, res) => {
+	// Parameters: answer_id
+	await update('helpful', { id: req.params['answer_id'], table: 'answers' }, (err, payload) => {
+		if (err) {
+			console.log('Report A Helpful Err', err);
+			res.status(500).send(err);
+		} else {
+			console.log('Report A HELPFUL SUCCESS: ', payload);
+			res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
+		}
+	});
+});
 
 // // Report Answer
 // // PUT /qa/answers/:answer_id/report
