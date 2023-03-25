@@ -7,6 +7,8 @@
 nginx/
 node_modules/
 
+postgres/data/
+
 # ignore config files
 .DS_Store
 */.DS_Store
