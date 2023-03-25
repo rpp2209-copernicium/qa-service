@@ -1,5 +1,5 @@
 # pull the PostgreSQL image from Docker
-FROM postgres:15.2
+FROM postgres:latest
 
 # copy the config file to the container
 RUN cat /usr/share/postgresql/postgresql.conf.sample > my-postgres.conf

@@ -10,6 +10,7 @@ let DB_NAME = process.env.DB_NAME;
 // Connection String Pattern
 // schema://user:password@host:port/database
 let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
+// let dbString = `postgres://admin:sdc@postgres:5432/qa`;
 
 // =============================================
 //            Postgres Pool Set Up
@@ -126,8 +127,11 @@ let fetch = async (endpoint, cb) => {
 	try {
 		// console.log('GET EP Query String was: ', query);
 		const { rows } = await client.query(query);
-		const result = (table === 'answers') ? rows[0] : rows;
-		cb(null, rows[0].answers);
+		if (table === 'answers') {
+			cb(null,  rows[0].answers);
+		} else {
+			cb(null,  rows);
+		}
 	} catch (err) {
 		cb(err);
 	} finally {
