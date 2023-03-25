@@ -30,7 +30,7 @@ services:
     working_dir: /api
 
   postgres:
-    image: postgres:latest
+    image: postgres:15.2
     build:
       context: ./postgres
     restart: always

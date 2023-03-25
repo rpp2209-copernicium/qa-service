@@ -84,8 +84,8 @@ router.put('/questions/:question_id/helpful', (req, res) => {
 // Report Question
 // PUT /qa/questions/:question_id/report
 // Parameters: question_id
-router.put('/questions/:question_id/report', (req, res) => {
-	update('reported', { id: req.params['question_id'], value: true }, (err, payload) => {
+router.put('/questions/:question_id/report', async (req, res) => {
+	await update('reported', { id: req.params['question_id'], value: true }, (err, payload) => {
 		if (err) {
 			console.log('Report Question Error: ', err);
 			res.status(500).send(err);
@@ -157,11 +157,19 @@ router.put('/answers/:answer_id/helpful', async (req, res) => {
 	});
 });
 
-// // Report Answer
-// // PUT /qa/answers/:answer_id/report
-// router.put('/answers/:answer_id/report', (req, res) => {
-// 	// Parameters: answer_id
-// 	res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
-// });
+// Report Answer
+// PUT /qa/answers/:answer_id/report
+router.put('/answers/:answer_id/report', async (req, res) => {
+	// Parameters: answer_id
+	await update('reported', { table: 'answers', id: req.params['answer_id'], value: true }, (err, payload) => {
+		if (err) {
+			console.log('Report A Error: ', err);
+			res.status(500).send(err);
+		} else {
+			console.log('Report A SUCCESS: ', payload);
+			res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
+		}
+	});
+});
 
 module.exports = router;

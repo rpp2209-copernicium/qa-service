@@ -58,26 +58,19 @@ let fetch = async (endpoint, cb) => {
 	// =============================================
 	// ✅ ANSWERS QUERY STRING
 	const aQuery = `
-	SELECT answers.question_id,
-
-		to_json(${page || 1}) page,
-		to_json(${count || 5}) count,
-
-		json_agg(
-			json_build_object(
-				'answer_id', answer_id,
-				'body', answer_body,
-				'date', answer_date,
-				'answerer_name', answerer_name,
-				'answer_helpfulness', answer_helpfulness,
-				'question_id', question_id,
-				'photos', json_build_array('test_value.png', 'value_the_second.png')
-			)
+	SELECT json_agg(results) answers FROM (
+		SELECT json_build_object(
+			'answer_id', answers.answer_id,
+			'body', answer_body,
+			'date', answer_date,
+			'answerer_name', answerer_name,
+			'helpfulness', answer_helpfulness,
+			'photos', JSON_AGG(json_build_object('id', answers_photos.id, 'url', answers_photos.url))
 		) results FROM answers
-		${ !question_id ? '' : `
-			WHERE answers.question_id=${question_id}
-			GROUP BY answers.question_id
-		`}
+		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		WHERE question_id=${question_id}
+		GROUP BY question_id, answers.answer_id, answers_photos.id
+	) results
 	`;
 
 	// ✅ QUESTIONS QUERY STRING
@@ -134,7 +127,7 @@ let fetch = async (endpoint, cb) => {
 		// console.log('GET EP Query String was: ', query);
 		const { rows } = await client.query(query);
 		const result = (table === 'answers') ? rows[0] : rows;
-		cb(null, result);
+		cb(null, rows[0].answers);
 	} catch (err) {
 		cb(err);
 	} finally {
