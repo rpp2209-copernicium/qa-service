@@ -1,6 +1,12 @@
 # pull the Node image from Docker
 FROM node:alpine
 
+# Install K6
+WORKDIR /tmp
+ADD https://github.com/loadimpact/k6/releases/download/v0.27.1/k6-v0.27.1-linux64.tar.gz /tmp/k6-v0.27.1-linux64.tar.gz
+RUN tar -xzf k6-v0.27.1-linux64.tar.gz
+RUN mv k6-v0.27.1-linux64/k6 /usr/bin/k6
+
 # set the current working directory
 WORKDIR /api
 
