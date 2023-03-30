@@ -1,8 +1,13 @@
 # ignore nginx container/image
 # was used for learning about docker
 # but not ready to discard it yet
+./nginx
+./nginx/
+*/nginx/
 nginx/
 node_modules/
+
+postgres/data/
 
 # ignore config files
 .DS_Store

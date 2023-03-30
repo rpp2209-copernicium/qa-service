@@ -87,21 +87,73 @@ describe('Containerized QA Database', function() {
 
 });
 
+// Query Responses to Test: GET a Product's Questions, GET a Question's Answers, GET an Answers Photos (?)
 describe('Query Response Time', function() {
 
-  it('should query the db and return in < 50ms', async () => {
+  it('Questions Query should return in < 50ms', async () => {
     const client = await pgPool.connect();
 
     try {
       await client.query('BEGIN'); // Start Transaction
 
       // Query the database for some arbitrary information
-      const { rows } = await client.query('EXPLAIN ANALYZE SELECT * FROM questions AS "result"')
+      const { rows } = await client.query('EXPLAIN ANALYZE SELECT * FROM questions AS "result" LIMIT 15')
 
       const regex = /\b\d+.\d+\b/; // regex to extract ms int from QUERY result
       const executionTime = parseFloat(rows[2]['QUERY PLAN'].match(regex)[0]);
 
       // Confirm the database returned response in the required amount of time
+      console.log('Q\'s Response Time: ', executionTime);
+      expect(executionTime).toBeLessThanOrEqual(50);
+
+      await client.query('ROLLBACK'); // Revert to the last save point
+
+    } catch (err) { // Handle any errors
+      throw err;
+    } finally { // Release connection back to the pool
+      client.release();
+    }
+  });
+
+  it('Answers Query should return in < 50ms', async () => {
+    const client = await pgPool.connect();
+
+    try {
+      await client.query('BEGIN'); // Start Transaction
+
+      // Query the database for some arbitrary information
+      const { rows } = await client.query('EXPLAIN ANALYZE SELECT * FROM answers AS "result" LIMIT 15')
+
+      const regex = /\b\d+.\d+\b/; // regex to extract ms int from QUERY result
+      const executionTime = parseFloat(rows[2]['QUERY PLAN'].match(regex));
+
+      // Confirm the database returned response in the required amount of time
+      console.log('A\'s Response Time: ', executionTime);
+      expect(executionTime).toBeLessThanOrEqual(50);
+
+      await client.query('ROLLBACK'); // Revert to the last save point
+
+    } catch (err) { // Handle any errors
+      throw err;
+    } finally { // Release connection back to the pool
+      client.release();
+    }
+  });
+
+  it('Photos Query shouyld return in < 50ms', async () => {
+    const client = await pgPool.connect();
+
+    try {
+      await client.query('BEGIN'); // Start Transaction
+
+      // Query the database for some arbitrary information
+      const { rows } = await client.query('EXPLAIN ANALYZE SELECT * FROM answers_photos AS "result" LIMIT 15')
+
+      const regex = /\b\d+.\d+\b/; // regex to extract ms int from QUERY result
+      const executionTime = parseFloat(rows[2]['QUERY PLAN'].match(regex)[0]);
+
+      // Confirm the database returned response in the required amount of time
+      console.log('P\'s Response Time: ', executionTime);
       expect(executionTime).toBeLessThanOrEqual(50);
 
       await client.query('ROLLBACK'); // Revert to the last save point

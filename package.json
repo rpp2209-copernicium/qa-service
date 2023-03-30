@@ -4,8 +4,9 @@
   "description": "Atelier Q&amp;A Service",
   "main": "index.js",
   "scripts": {
-    "start": "npx nodemon server/index.js",
+    "start": "npx nodemon -L server/index.js",
     "test": "jest ./__tests__/test.js --watch --coverage",
+    "k6": "k6 run ./__tests__/stress-test.js",
     "test-local": "jest ./api/__tests__/test.js --watch --coverage",
     "get-rows": "node ./data/etl/utils/count-rows.js"
   },

@@ -2,19 +2,20 @@ version: '3'
 
 services:
 
-  app:
-    image: node:alpine
-    build: ../fec-graviton-legacy/
-    # environment:
-    #   POSTGRES_HOST: postgres
-    #   POSTGRES_USER: admin
-    #   POSTGRES_PASSWORD: sdc
-    #   POSTGRES_DB: qa
-    volumes:
-      - ../fec-graviton-legacy/:/app
-    ports:
-      - "3000:3000"
-    working_dir: /app
+  # app:
+  #   image: node:alpine
+  #   build: ../fec-graviton-legacy/
+  #   # environment:
+  #   #   POSTGRES_HOST: postgres
+  #   #   POSTGRES_USER: admin
+  #   #   POSTGRES_PASSWORD: sdc
+  #   #   POSTGRES_DB: qa
+  #   volumes:
+  #     - ../fec-graviton-legacy/:/app
+  #   ports:
+  #     - "3000:3000"
+  #   working_dir: /app
+
   api:
     restart: always
     build:
@@ -29,7 +30,7 @@ services:
     working_dir: /api
 
   postgres:
-    image: postgres:latest
+    image: postgres:15.2
     build:
       context: ./postgres
     restart: always
@@ -42,6 +43,8 @@ services:
       - qa-db-data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
+    command: >
+      -c max_wal_size=10GB  
 
 volumes:
   qa-db-data:
