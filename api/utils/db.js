@@ -20,11 +20,13 @@ let pgPool = new Pool({ connectionString: dbString });
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
 	const client = await pgPool.connect();
-	let table, question_id, product_id, count, page, match;
+	let table, question_id, product_id, match;
+	let count = 5; 
+	let page = 1;
 
 	// Check the endpoint and do some variable setting based on its value
 	const answerRegex = /^questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
-	const urlRegex = /^(questions)(?:\/\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
+	const urlRegex = /^(questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
 
 	// If request was made for answers, set Answer variables
 	if (endpoint.match(answerRegex)) {
@@ -51,8 +53,8 @@ let fetch = async (endpoint, cb) => {
 		match = 'no match'; // set error string if no match found
 	}
 	// Check Regex grabbed the right variable values
-	// console.log('REGEX Matched: ', match);
-	// console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
+	console.log('REGEX Matched: ', match);
+	console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
 
 	// =============================================
 	//           Build up the Queries...
@@ -71,6 +73,7 @@ let fetch = async (endpoint, cb) => {
 		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
 		WHERE question_id=${question_id}
 		GROUP BY question_id, answers.answer_id, answers_photos.id
+		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
 	) results
 	`;
 
@@ -96,23 +99,8 @@ let fetch = async (endpoint, cb) => {
 		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
 		${ !product_id ? '' : `WHERE questions.product_id='${product_id}'`}
 		GROUP BY questions.question_id, answers.answer_id, answers_photos.id
-		ORDER BY questions.question_id DESC
+		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
 	`;
-
-	// ❌ PHOTOS QUERY STRING (TODO)
-	// const photosQuery = `
-	// 	SELECT answers.answer_id, JSON_AGG(
-	// 		json_build_object(
-	// 			'url', url,
-	// 			'answer_id', answers.answer_id
-	// 		)
-	// 	) photos FROM answers
-
-	// 	JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
-	// 	GROUP BY answers.answer_id
-
-	// 	LIMIT 10
-	// `;
 
 	// =============================================
 	//          FINAL/AGGREGATED Q STRINGS
@@ -120,15 +108,15 @@ let fetch = async (endpoint, cb) => {
 	// If table is answers, run Answers query, else run Questions query
 	const query = (table === 'answers' ?
 		`${aQuery}`
-		: `${ !product_id ? 'SELECT * FROM questions LIMIT 15' : `${qIDQuery}`}`
+		: `${ !product_id ? `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` : `${qIDQuery}`}`
 	);
 
 	// Finally, execute the query and send back the results
 	try {
-		// console.log('GET EP Query String was: ', query);
 		const { rows } = await client.query(query);
+		console.log('QUERY STRING RESULT: ', rows);
 		if (table === 'answers') {
-			cb(null,  rows[0].answers);
+			cb(null,  rows[0]);
 		} else {
 			cb(null,  rows);
 		}
