@@ -2,15 +2,25 @@ require("dotenv").config();
 const { Pool } = require('pg');
 
 // DB Connection Config
+let DB_URL = process.env.DB_URL;
 let DB_USER = process.env.DB_USER;
 let DB_PASSWORD = process.env.DB_PASSWORD;
 let DB_HOST = process.env.DB_HOST;
 let DB_NAME = process.env.DB_NAME;
 
+
+// =============================================
+//  IF ERRORS CONNECTING TO DATABASE FROM 
+// DEPLOYED EC2 INSTANCE, RE-RUN PORT-MAPPING 
+//   COMMAND ON !! BOTH !! CONTAINERS AGAIN
+
+// sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port <desired_port>
+// =============================================
+
 // Connection String Pattern
 // schema://user:password@host:port/database
-let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
-// let dbString = `postgres://admin:sdc@postgres:5432/qa`;
+// let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
+let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
 
 // =============================================
 //            Postgres Pool Set Up
@@ -19,14 +29,15 @@ let pgPool = new Pool({ connectionString: dbString });
 
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
+	// console.log('Fetching ENDPOINT from DB: ', endpoint);
 	const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
 	let page = 1;
 
 	// Check the endpoint and do some variable setting based on its value
-	const answerRegex = /^questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
-	const urlRegex = /^(questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
+	const answerRegex = /^\/questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
+	const urlRegex = /^(\/questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
 
 	// If request was made for answers, set Answer variables
 	if (endpoint.match(answerRegex)) {
