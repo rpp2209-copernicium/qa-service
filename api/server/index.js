@@ -16,28 +16,12 @@ app.get('/', (req, res) => {
   res.send('Hello API World');
 });
 
-
-// =============================================
-//    REMOVE THIS WHEN EC2 FULLY DEBUGGED
-// =============================================
-app.get('/qa/questions', async (req, res) => {
-  
-  await fetch('/questions', (err, payload) => {
-    if(err) {
-      console.log('There was an error in QA fake fetch => server/index.js', err);
-      res.status(500).send(err);
-    } else {
-      console.log('Payload', payload);
-      res.status(200).send(payload);
-    }
-  })
-  
+// Loader.io Verification File
+app.get('/loaderio-87557d96b121a3b28e625cbbcbba03d8.txt', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'loaderio-87557d96b121a3b28e625cbbcbba03d8.txt'));
 });
 
-// =============================================
-//    PUT THI BACK WHEN EC2 FULLY DEBUGGED
-// =============================================
-// app.use('/qa', routes);
+app.use('/qa', routes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
