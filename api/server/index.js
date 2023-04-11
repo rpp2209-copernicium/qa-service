@@ -4,15 +4,10 @@ const app = express();
 const port = process.env.PORT || 8080;
 const routes = require('./routes/questions.js');
 
-<<<<<<< HEAD
-// ADDING THIS FOR EC2 TESTING ONLY - REMOVE ONCE WORKING
-const { fetch } = require('..//utils/db.js');
-=======
 // =============================================
 //    REMOVE THIS WHEN EC2 FULLY DEBUGGED
 // =============================================
-const { fetch } = require('./utils/db.js');
->>>>>>> f0fffe3cb074b0a3aeaf986bc6d960b8a299afe0
+const { fetch } = require('../utils/db.js');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());

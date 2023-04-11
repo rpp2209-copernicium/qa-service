@@ -19,47 +19,19 @@ let DB_NAME = process.env.DB_NAME;
 
 // Connection String Pattern
 // schema://user:password@host:port/database
-<<<<<<< HEAD
-// let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@52.54.238.210:5432/${DB_NAME}`;
 // let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
 
 let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
-// let dbString = `postgres://admin:sdc@52.54.238.210:5432/qa`;
 // let dbString = `postgres://admin:sdc@postgres:5432/qa`;
-=======
-// let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
-let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
->>>>>>> f0fffe3cb074b0a3aeaf986bc6d960b8a299afe0
 
 // =============================================
 //            Postgres Pool Set Up
 // =============================================
 let pgPool = new Pool({ connectionString: dbString });
 
-let fetchFAKE = async (endpoint, cb) => {
-  const client = await pgPool.connect();
-  console.log('inside fake fetch');
-  let queryString = `SELECT product_id, question_id, question_body, asker_name FROM questions ORDER BY question_id DESC LIMIT 15`;
-
-  try {
-    console.log('Attempting to Query Database, q string is: ', queryString);
-    const { rows } = await client.query(queryString);
-    console.log('TEST Query Result', rows);
-    cb(null, rows);
-  } catch (err) {
-    cb(err);
-  } finally {
-    client.release();
-  }
-}; 
-
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
-<<<<<<< HEAD
-	console.log('Fetching Endpoint:', endpoint);
-=======
 	// console.log('Fetching ENDPOINT from DB: ', endpoint);
->>>>>>> f0fffe3cb074b0a3aeaf986bc6d960b8a299afe0
 	const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
