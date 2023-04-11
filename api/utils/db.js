@@ -2,6 +2,7 @@ require("dotenv").config();
 const { Pool } = require('pg');
 
 // DB Connection Config
+let DB_URL = process.env.DB_URL;
 let DB_USER = process.env.DB_USER;
 let DB_PASSWORD = process.env.DB_PASSWORD;
 let DB_HOST = process.env.DB_HOST;
@@ -9,7 +10,11 @@ let DB_NAME = process.env.DB_NAME;
 
 // Connection String Pattern
 // schema://user:password@host:port/database
-let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
+// let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@52.54.238.210:5432/${DB_NAME}`;
+// let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
+
+let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
+// let dbString = `postgres://admin:sdc@52.54.238.210:5432/qa`;
 // let dbString = `postgres://admin:sdc@postgres:5432/qa`;
 
 // =============================================
@@ -17,16 +22,34 @@ let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`
 // =============================================
 let pgPool = new Pool({ connectionString: dbString });
 
+let fetchFAKE = async (endpoint, cb) => {
+  const client = await pgPool.connect();
+  console.log('inside fake fetch');
+  let queryString = `SELECT product_id, question_id, question_body, asker_name FROM questions ORDER BY question_id DESC LIMIT 15`;
+
+  try {
+    console.log('Attempting to Query Database, q string is: ', queryString);
+    const { rows } = await client.query(queryString);
+    console.log('TEST Query Result', rows);
+    cb(null, rows);
+  } catch (err) {
+    cb(err);
+  } finally {
+    client.release();
+  }
+}; 
+
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
+	console.log('Fetching Endpoint:', endpoint);
 	const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
 	let page = 1;
 
 	// Check the endpoint and do some variable setting based on its value
-	const answerRegex = /^questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
-	const urlRegex = /^(questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
+	const answerRegex = /^\/questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
+	const urlRegex = /^(\/questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
 
 	// If request was made for answers, set Answer variables
 	if (endpoint.match(answerRegex)) {
@@ -113,8 +136,9 @@ let fetch = async (endpoint, cb) => {
 
 	// Finally, execute the query and send back the results
 	try {
+		console.log('QUERY STRING WAS:', query);
 		const { rows } = await client.query(query);
-		console.log('QUERY STRING RESULT: ', rows);
+		//console.log('QUERY STRING RESULT: ', rows);
 		if (table === 'answers') {
 			cb(null,  rows[0]);
 		} else {
