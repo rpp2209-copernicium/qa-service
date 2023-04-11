@@ -8,14 +8,28 @@ let DB_PASSWORD = process.env.DB_PASSWORD;
 let DB_HOST = process.env.DB_HOST;
 let DB_NAME = process.env.DB_NAME;
 
+
+// =============================================
+//  IF ERRORS CONNECTING TO DATABASE FROM 
+// DEPLOYED EC2 INSTANCE, RE-RUN PORT-MAPPING 
+//   COMMAND ON !! BOTH !! CONTAINERS AGAIN
+
+// sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port <desired_port>
+// =============================================
+
 // Connection String Pattern
 // schema://user:password@host:port/database
+<<<<<<< HEAD
 // let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@52.54.238.210:5432/${DB_NAME}`;
 // let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
 
 let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
 // let dbString = `postgres://admin:sdc@52.54.238.210:5432/qa`;
 // let dbString = `postgres://admin:sdc@postgres:5432/qa`;
+=======
+// let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
+let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
+>>>>>>> f0fffe3cb074b0a3aeaf986bc6d960b8a299afe0
 
 // =============================================
 //            Postgres Pool Set Up
@@ -41,7 +55,11 @@ let fetchFAKE = async (endpoint, cb) => {
 
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
+<<<<<<< HEAD
 	console.log('Fetching Endpoint:', endpoint);
+=======
+	// console.log('Fetching ENDPOINT from DB: ', endpoint);
+>>>>>>> f0fffe3cb074b0a3aeaf986bc6d960b8a299afe0
 	const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 

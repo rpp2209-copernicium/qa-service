@@ -14,6 +14,11 @@ postgres/data/
 */.DS_Store
 .env
 
+<<<<<<< HEAD
 # ignore newrelic files
 newrelic.js
 newrelic_agent.log
+=======
+githubkey
+githubkey.pub
+>>>>>>> f0fffe3cb074b0a3aeaf986bc6d960b8a299afe0
