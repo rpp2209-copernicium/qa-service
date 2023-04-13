@@ -11,16 +11,20 @@ const { fetch, save, update, fetchRowCount } = require('../../utils/db.js');
 // GET /qa/questions
 // Parameters: product_id (int), page (int), count (int)
 router.get('/questions', async (req, res) => {
-	let url = req.url.slice(1)
-	// console.log('URL LOG IS RIGHT HERE!', url);
+	//let url = req.url.slice(1)
+	//console.log('URL LOG IS RIGHT HERE!', req.url);
 
-	await fetch(url, (err, payload) => {
+	// TEST EC2 LINE -- REMOVE LATER
+	//await fetch('/questions', (err, payload) => {
+	
+	//ORIGINAL LINE
+	await fetch(req.url, (err, payload) => {
 		if (err) {
 			console.log('FETCH Q\'s Error:', err);
-			res.status(500).json(err);
+			res.status(500).send(err);
 		} else {
-			// console.log('Q Data', payload);
-			res.status(200).json(payload); // Expected Status: 200 OK
+			console.log('Q Data FROM routes/questions.js', payload);
+			res.status(200).send(payload); // Expected Status: 200 OK
 		}
 	});
 });
