@@ -64,8 +64,8 @@ let fetch = async (endpoint, cb) => {
 		match = 'no match'; // set error string if no match found
 	}
 	// Check Regex grabbed the right variable values
-	console.log('REGEX Matched: ', match);
-	console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
+	// console.log('REGEX Matched: ', match);
+	// console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
 
 	// =============================================
 	//           Build up the Queries...

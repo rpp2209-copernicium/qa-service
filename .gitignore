@@ -1,10 +1,6 @@
 # ignore nginx container/image
 # was used for learning about docker
 # but not ready to discard it yet
-./nginx
-./nginx/
-*/nginx/
-nginx/
 node_modules/
 
 postgres/data/
@@ -13,6 +9,3 @@ postgres/data/
 .DS_Store
 */.DS_Store
 .env
-
-githubkey
-githubkey.pub
