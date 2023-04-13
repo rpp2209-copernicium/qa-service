@@ -7,7 +7,7 @@
     "pm": "pm2 start api/server/index.js",
     "start": "npx nodemon -L server/index.js",
     "newrelic": "npx nodemon -r newrelic server/index.js NEW_RELIC_APP_NAME=\"QA API\"",
-    "test": "jest ./__tests__/test.js --watch --coverage",
+    "test": "jest ./__tests__ --watch --coverage",
     "k6": "k6 run ./__tests__/stress-test.js",
     "test-local": "jest ./api/__tests__/test.js --watch --coverage",
     "get-rows": "node ./data/etl/utils/count-rows.js"
