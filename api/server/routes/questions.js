@@ -11,14 +11,14 @@ const { fetch, save, update, fetchRowCount } = require('../../utils/db.js');
 // GET /qa/questions
 // Parameters: product_id (int), page (int), count (int)
 router.get('/questions', async (req, res) => {
-	//let url = req.url.slice(1)
+	let url = req.url.slice(1)
 	//console.log('URL LOG IS RIGHT HERE!', req.url);
 
 	// TEST EC2 LINE -- REMOVE LATER
 	//await fetch('/questions', (err, payload) => {
 	
 	//ORIGINAL LINE
-	await fetch(req.url, (err, payload) => {
+	await fetch(url, (err, payload) => {
 		if (err) {
 			console.log('FETCH Q\'s Error:', err);
 			res.status(500).send(err);
