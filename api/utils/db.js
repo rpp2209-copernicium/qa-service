@@ -27,12 +27,14 @@ let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
 // =============================================
 //            Postgres Pool Set Up
 // =============================================
-let pgPool = new Pool({ connectionString: dbString });
+let pool = new Pool({ connectionString: dbString });
+
+pool.connect();
 
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
 	console.log('Fetching ENDPOINT from DB: ', endpoint);
-	const client = await pgPool.connect();
+	// const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
 	let page = 1;
@@ -125,11 +127,20 @@ let fetch = async (endpoint, cb) => {
 		`${aQuery}`
 		: `${ !product_id ? `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` : `${qIDQuery}`}`
 	);
+	
 
+	// PRE NGINX LB FIX
+	let queryString = `SELECT * FROM questions    
+	  FULL OUTER JOIN answers on questions.question_id=answers.question_id    
+	  LEFT JOIN answers_photos on answers.answer_id=answers_photos.answer_id   
+	  WHERE questions.product_id='${product_id}'   
+	  LIMIT ${count} OFFSET ${(page - 1) * count}
+	`;
+	
 	// Finally, execute the query and send back the results
 	try {
-		console.log('QUERY STRING WAS:', query);
-		const { rows } = await client.query(query);
+		console.log('QUERY STRING WAS:', queryString);
+		const { rows } = await pool.query(queryString);
 		//console.log('QUERY STRING RESULT: ', rows);
 		if (table === 'answers') {
 			cb(null,  rows[0]);
@@ -138,9 +149,9 @@ let fetch = async (endpoint, cb) => {
 		}
 	} catch (err) {
 		cb(err);
-	} finally {
-		client.release(); // Release connection back to the pool
-	}
+	} // finally {
+	//	client.release(); // Release connection back to the pool
+	//}
 };
 
 // PUT REQUESTS (Report a Question/Answer or mark it Helpful)
