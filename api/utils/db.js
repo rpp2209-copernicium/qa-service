@@ -77,7 +77,25 @@ let fetch = async (endpoint, cb) => {
 	//           Build up the Queries...
 	// =============================================
 	// ✅ ANSWERS QUERY STRING
-	const aQuery = `
+	const aQuery = `SELECT answers.answer_id, 
+                
+		json_build_object(
+                        'answer_id', answers.answer_id,
+                        'body', answers.answer_body,
+                        'date', answers.answer_date,
+                        'answerer_name', answers.answerer_name,
+                        'helpfulness', answers.answer_helpfulness,
+                        'photos', JSON_AGG(json_build_object('id', answers_photos.id, 'url', answers_photos.url))
+
+                ) results FROM answers
+		LEFT JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+                WHERE question_id=${question_id}
+                GROUP BY answers.answer_id
+                ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
+	`;
+	
+
+	const aQueryOLD = `
 	SELECT json_agg(results) answers FROM (
 		SELECT json_build_object(
 			'answer_id', answers.answer_id,
@@ -87,7 +105,7 @@ let fetch = async (endpoint, cb) => {
 			'helpfulness', answer_helpfulness,
 			'photos', JSON_AGG(json_build_object('id', answers_photos.id, 'url', answers_photos.url))
 		) results FROM answers
-		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		LEFT JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
 		WHERE question_id=${question_id}
 		GROUP BY question_id, answers.answer_id, answers_photos.id
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
@@ -103,17 +121,17 @@ let fetch = async (endpoint, cb) => {
 
 			json_build_object(
 				'id', answers.answer_id,
-				'body', answer_body,
-				'date', answer_date,
-				'answerer_name', answerer_name,
-				'helpfulness', answer_helpfulness,
+				'body', answers.answer_body,
+				'date', answers.answer_date,
+				'answerer_name', answers.answerer_name,
+				'helpfulness', answers.answer_helpfulness,
 				'photos', JSON_AGG(answers_photos.url)
 			)
 
 		) answers FROM questions
 
-		JOIN answers ON answers.question_id=questions.question_id
-		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		LEFT JOIN answers ON answers.question_id=questions.question_id
+		LEFT JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
 		${ !product_id ? '' : `WHERE questions.product_id='${product_id}'`}
 		GROUP BY questions.question_id, answers.answer_id, answers_photos.id
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
@@ -128,23 +146,12 @@ let fetch = async (endpoint, cb) => {
 		: `${ !product_id ? `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` : `${qIDQuery}`}`
 	);
 	
-
-	// PRE NGINX LB FIX
-	let queryString = `SELECT * FROM questions    
-	  FULL OUTER JOIN answers on questions.question_id=answers.question_id    
-	  LEFT JOIN answers_photos on answers.answer_id=answers_photos.answer_id   
-	  WHERE questions.product_id='${product_id}'   
-	  LIMIT ${count} OFFSET ${(page - 1) * count}
-	`;
-	
 	// Finally, execute the query and send back the results
 	try {
-		console.log('QUERY STRING WAS:', queryString);
-		const { rows } = await pool.query(queryString);
+		console.log('QUERY STRING WAS:', query);
+		const { rows } = await pool.query(query);
 		//console.log('QUERY STRING RESULT: ', rows);
 		if (table === 'answers') {
-			cb(null,  rows[0]);
-		} else {
 			cb(null,  rows);
 		}
 	} catch (err) {
