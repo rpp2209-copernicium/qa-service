@@ -131,17 +131,35 @@ let fetch = async (endpoint, cb) => {
 //				Mark Q or A Reported / Helpful
 // =============================================
 let update = async (endpoint, body, cb) => {
+	
+	// Set Update Column based on which table was passed to the update function 
 	let table = body.table || 'questions';
-
 	let col = (endpoint === 'helpful' && table === 'answers') ? "answer_helpfulness"
 	  : (table === 'questions') ? "question_helpfulness"
 		: "reported";
 
-	const { rows } = await client.query(`SELECT ${col} FROM ${table} WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}`);
+	// Get the current helpfulness value, so it can be incremented
+	const { rows } = await client.query(`
+		SELECT ${col} 
+		FROM ${table} 
+		WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}
+	`);
 
+	// Increment the current helpfulness
 	const nextSum = rows[0][col] + 1;
 
-	const query = `UPDATE ${table} SET ${col} = ${(col === 'question_helpfulness' || col === 'answer_helpfulness') ? `${nextSum}` : true } WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}`;
+	// If updating Q or A helpfulness
+	// Set the current database helpfulness value to `nextSum`
+	// Otherwise, set reported to `true` 
+	const query = `
+		UPDATE ${table} 
+		SET ${col} = ${
+			(col === 'question_helpfulness' || col === 'answer_helpfulness') 
+			? `${nextSum}` 
+			: true 
+		} 
+		WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}
+	`;
 
 	try {
 		console.log('UPDATE Q String: ', query);
@@ -160,19 +178,19 @@ let update = async (endpoint, body, cb) => {
 //			Submit a new Question or Answer
 // =============================================
 let save = async (table, qaObj, cb) => {
-	// console.log('Save QA table is: ', table);
-
+	
+	// Build the query string depending on which table was passed into the function
 	const query = (table === 'questions') ? `
 		INSERT INTO ${table}("product_id", "question_body", "question_date", "asker_name", "asker_email", "question_helpfulness", "reported")
 		VALUES('${qaObj.product_id}', '${qaObj.question_body}', ${Date.now()}, '${qaObj.asker_name}', '${qaObj.asker_email}', 0, false)
 	`
 	: `
-		INSERT INTO ${table}("answer_body", "answer_date",  "answerer_name", "asker_name", "answerer_email", "answer_helpfulness", "reported")
-		VALUES('${qaObj.answer_body}', ${Date.now()}, '${qaObj.answerer_name}', '${qaObj.answerer_email}', 0, false)
+		INSERT INTO ${table}("answer_body", "answer_date", "answerer_name", "answerer_email", "answer_helpfulness", "reported", "question_id")
+		VALUES('${qaObj.answer_body}', ${Date.now()}, '${qaObj.answerer_name}', '${qaObj.answerer_email}', 0, false, ${qaObj.question_id})
 	`;
 
 	try {
-		// console.log('INSERT String', query);
+		// Perform the insert and send the results back to the client
 		const { rows } = await pool.query(query);
 		cb(null, rows);
 

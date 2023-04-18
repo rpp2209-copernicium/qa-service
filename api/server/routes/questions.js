@@ -110,9 +110,9 @@ router.post('/questions/:question_id/answers', async (req, res) => {
 	console.log('GOT Create A BODY', req.body);
 
 	const answer = {
-		answer_body: req.body,
-		answerer_name: req.answerer_name,
-		answerer_email: req.answerer_email,
+		answer_body: req.body.answer_body,
+		answerer_name: req.body.answerer_name,
+		answerer_email: req.body.answerer_email,
 		question_id: req.params.question_id
 	};
 
