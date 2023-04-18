@@ -33,9 +33,9 @@ router.post('/questions', async (req, res) => {
 
 	const question = {
 		product_id: req.body.product_id,
-		question_body: req.body.body,
-		asker_name: req.body.name,
-		asker_email: req.body.email
+		question_body: req.body.question_body,
+		asker_name: req.body.asker_name,
+		asker_email: req.body.asker_email
 	};
 
 	await save('questions', question, (err, payload) => {

@@ -100,6 +100,7 @@ let fetch = async (endpoint, cb) => {
 				) 
 			) answers FROM answers a WHERE a.question_id=q.question_id)	
 		FROM (SELECT * FROM questions WHERE product_id='${product_id}') q
+		ORDER BY q.question_id DESC
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
 
@@ -115,7 +116,7 @@ let fetch = async (endpoint, cb) => {
 
 	// Finally, execute the query and send back the results
 	try {
-		// console.log('QUERY STRING WAS:', query);
+		console.log('QUERY STRING WAS:', query);
 		const { rows } = await pool.query(query);
 		// console.log('DB FETCH RESULT: ', rows);
 		cb(null,  rows);
@@ -159,19 +160,15 @@ let update = async (endpoint, body, cb) => {
 //			Submit a new Question or Answer
 // =============================================
 let save = async (table, qaObj, cb) => {
-	if (table === 'answers') {
-		const { answer_body, answerer_name, answerer_email, question_id } = qaObj;
-	} else if (table === 'questions') {
-		const { product_id, question_body, asker_name, asker_email } = qaObj;
-	}
+	// console.log('Save QA table is: ', table);
 
 	const query = (table === 'questions') ? `
 		INSERT INTO ${table}("product_id", "question_body", "question_date", "asker_name", "asker_email", "question_helpfulness", "reported")
-		VALUES('${product_id}', '${question_body}', ${Date.now()}, '${asker_name}', '${asker_email}', 0, false)
+		VALUES('${qaObj.product_id}', '${qaObj.question_body}', ${Date.now()}, '${qaObj.asker_name}', '${qaObj.asker_email}', 0, false)
 	`
 	: `
 		INSERT INTO ${table}("answer_body", "answer_date",  "answerer_name", "asker_name", "answerer_email", "answer_helpfulness", "reported")
-		VALUES('${answer_body}', ${Date.now()}, '${answerer_name}', '${answerer_email}', 0, false)
+		VALUES('${qaObj.answer_body}', ${Date.now()}, '${qaObj.answerer_name}', '${qaObj.answerer_email}', 0, false)
 	`;
 
 	try {
