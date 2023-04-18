@@ -11,17 +11,13 @@ let DB_NAME = process.env.DB_NAME;
 // Connection String Pattern
 // schema://user:password@host:port/database
 // let dbString = `postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}`;
-
 let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
-// let dbString = `postgres://admin:sdc@postgres:5432/qa`;
-
-// =============================================
-//            Postgres Pool Set Up
-// =============================================
 let pool = new Pool({ connectionString: dbString });
 pool.connect();
 
-// GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
+// =============================================
+//            		GET REQUESTS
+// =============================================
 let fetch = async (endpoint, cb) => {
 	console.log('Fetching ENDPOINT from DB: ', endpoint);
 	let table, question_id, product_id, match;
@@ -56,6 +52,7 @@ let fetch = async (endpoint, cb) => {
 	} else {
 		match = 'no match'; // set error string if no match found
 	}
+
 	// Confirm the Regex grabbed expected values
 	// console.log('REGEX Matched: ', match);
 	console.log('Database Table: ', table, 
@@ -64,10 +61,7 @@ let fetch = async (endpoint, cb) => {
 		'count', count
 	);
 
-	// =============================================
-	//           Build up the Queries...
-	// =============================================
-	// ✅ ANSWERS QUERY STRING
+	// Build up the Queries...
 	const answers = `SELECT 
 			a.answer_id answer_id,
 			a.answer_body body,
@@ -82,8 +76,6 @@ let fetch = async (endpoint, cb) => {
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
 	
-	// =============================================
-	// ✅ QUESTIONS QUERY STRING
 	const questions = `SELECT 
 			q.question_id question_id,
 			q.question_body,
@@ -123,30 +115,38 @@ let fetch = async (endpoint, cb) => {
 
 	// Finally, execute the query and send back the results
 	try {
-		console.log('QUERY STRING WAS:', query);
+		// console.log('QUERY STRING WAS:', query);
 		const { rows } = await pool.query(query);
-		console.log('QUERY STRING RESULT: ', rows);
+		// console.log('DB FETCH RESULT: ', rows);
 		cb(null,  rows);
 	} catch (err) {
 		cb(err);
 	}
 };
 
-// PUT REQUESTS (Report a Question/Answer or mark it Helpful)
+
+// =============================================
+//            		PUT REQUESTS
+//				Mark Q or A Reported / Helpful
+// =============================================
 let update = async (endpoint, body, cb) => {
 	let table = body.table || 'questions';
+
 	let col = (endpoint === 'helpful' && table === 'answers') ? "answer_helpfulness"
 	  : (table === 'questions') ? "question_helpfulness"
 		: "reported";
 
 	const { rows } = await client.query(`SELECT ${col} FROM ${table} WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}`);
+
 	const nextSum = rows[0][col] + 1;
+
 	const query = `UPDATE ${table} SET ${col} = ${(col === 'question_helpfulness' || col === 'answer_helpfulness') ? `${nextSum}` : true } WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}`;
 
 	try {
-		// console.log('UPDATE Q String: ', query);
+		console.log('UPDATE Q String: ', query);
 		// console.log('Sum BEFORE: ', nextSum - 1, 'After: ', nextSum);
 		const { rows } = await pool.query(query);
+		console.log('DB PUT/UPDATE RESULT: ', rows);
 		cb(null, rows);
 	} catch (err) {
 		cb(err);
@@ -154,7 +154,10 @@ let update = async (endpoint, body, cb) => {
 	} 
 };
 
-// POSTS REQUESTS (submit a new Question or Answer)
+// =============================================
+//            		POST REQUESTS 
+//			Submit a new Question or Answer
+// =============================================
 let save = async (table, qaObj, cb) => {
 	if (table === 'answers') {
 		const { answer_body, answerer_name, answerer_email, question_id } = qaObj;
@@ -182,20 +185,4 @@ let save = async (table, qaObj, cb) => {
 	} 
 };
 
-// FETCH DB ROW COUNT
-let fetchRowCount = async (table, cb) => {
-	const query = `SELECT COUNT(*) FROM ${table || 'questions'}`;
-
-	try {
-		// console.log('Fetch ROW COUNT Query String: ', query);
-		const { rows } = await pool.query(query);
-		console.log('ROW COUNT RESULT', rows);
-		cb(null, rows);
-
-	} catch (err) {
-		cb(err);
-
-	} 
-};
-
-module.exports = { fetch, save, update, fetchRowCount };
+module.exports = { fetch, save, update  };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 
-const { fetch, save, update, fetchRowCount } = require('../../utils/db.js');
+const { fetch, save, update  } = require('../../utils/db.js');
 
 // ❓🤨 List Questions (Returns Loaded Questions, Excludes Newly Inserted Qs for some reason ())
 // =============================================
@@ -13,33 +13,14 @@ const { fetch, save, update, fetchRowCount } = require('../../utils/db.js');
 router.get('/questions', async (req, res) => {
 	let url = req.url.slice(1)
 	//console.log('URL LOG IS RIGHT HERE!', req.url);
-
-	// TEST EC2 LINE -- REMOVE LATER
-	//await fetch('/questions', (err, payload) => {
 	
-	//ORIGINAL LINE
 	await fetch(url, (err, payload) => {
 		if (err) {
-			console.log('FETCH Q\'s Error:', err);
+			console.log('Error From QA Microservice GET Questions:', err);
 			res.status(500).send(err);
 		} else {
-			console.log('Q Data FROM routes/questions.js', payload);
-			res.status(200).send(payload); // Expected Status: 200 OK
-		}
-	});
-});
-
-// ✅ GET ROW COUNTS
-router.get('/questions/:table_name/rows', (req, res) => {
-	let table = req.params['table_name'];
-
-	fetchRowCount(table, (err, payload) => {
-		if (err) {
-			console.log('FETCH Row Count Error:', err);
-			res.status(500).json(err);
-		} else {
-			// console.log('Q Data', payload);
-			res.status(200).json(payload); // Expected Status: 200 <row-count>
+			console.log('QA Microservice GET Questions Payload', payload);
+			res.status(200).send(payload); 
 		}
 	});
 });
