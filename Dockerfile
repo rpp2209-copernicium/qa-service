@@ -23,6 +23,8 @@ COPY ./api .
 
 # ports are already mapped in compose YAML file
 EXPOSE 8080
+EXPOSE 8081
+EXPOSE 8082
 
 # start the server and listen for any changes
 CMD ["npm", "start"]

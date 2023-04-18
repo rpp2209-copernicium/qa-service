@@ -27,12 +27,14 @@ let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
 // =============================================
 //            Postgres Pool Set Up
 // =============================================
-let pgPool = new Pool({ connectionString: dbString });
+let pool = new Pool({ connectionString: dbString });
+
+pool.connect();
 
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
 	console.log('Fetching ENDPOINT from DB: ', endpoint);
-	const client = await pgPool.connect();
+	// const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
 	let page = 1;
@@ -75,7 +77,25 @@ let fetch = async (endpoint, cb) => {
 	//           Build up the Queries...
 	// =============================================
 	// ✅ ANSWERS QUERY STRING
-	const aQuery = `
+	const aQuery = `SELECT a.answer_id, 
+                
+		json_build_object(
+                        'answer_id', a.answer_id,
+                        'body', a.answer_body,
+                        'date', a.answer_date,
+                        'answerer_name', a.answerer_name,
+                        'helpfulness', a.answer_helpfulness,
+			'photo', (SELECT JSON_AGG(json_build_object('id', ap.id, 'url', ap.url))
+                                   FROM answers_photos ap WHERE ap.answer_id=a.answer_id
+			         )
+                ) results FROM answers a
+                WHERE question_id=${question_id}
+                GROUP BY a.answer_id
+                ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
+	`;
+	
+
+	const aQueryOLD = `
 	SELECT json_agg(results) answers FROM (
 		SELECT json_build_object(
 			'answer_id', answers.answer_id,
@@ -85,14 +105,14 @@ let fetch = async (endpoint, cb) => {
 			'helpfulness', answer_helpfulness,
 			'photos', JSON_AGG(json_build_object('id', answers_photos.id, 'url', answers_photos.url))
 		) results FROM answers
-		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		LEFT JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
 		WHERE question_id=${question_id}
 		GROUP BY question_id, answers.answer_id, answers_photos.id
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
 	) results
 	`;
 
-  // TEMP - COMPARE SPEED BEFORE INDEXING / OPTIMIZING TO O.G. A QUERY ABOVE 
+ 	// TEMP - COMPARE SPEED BEFORE INDEXING / OPTIMIZING TO O.G. A QUERY ABOVE 
 	// Query optimizations made: 
 	// 1. Reduced the size of my data set by filtering answers by question ID 
 		// **before building final JSON object. 
@@ -128,17 +148,17 @@ let fetch = async (endpoint, cb) => {
 
 			json_build_object(
 				'id', answers.answer_id,
-				'body', answer_body,
-				'date', answer_date,
-				'answerer_name', answerer_name,
-				'helpfulness', answer_helpfulness,
+				'body', answers.answer_body,
+				'date', answers.answer_date,
+				'answerer_name', answers.answerer_name,
+				'helpfulness', answers.answer_helpfulness,
 				'photos', JSON_AGG(answers_photos.url)
 			)
 
 		) answers FROM questions
 
-		JOIN answers ON answers.question_id=questions.question_id
-		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+		LEFT JOIN answers ON answers.question_id=questions.question_id
+		LEFT JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
 		${ !product_id ? '' : `WHERE questions.product_id='${product_id}'`}
 		GROUP BY questions.question_id, answers.answer_id, answers_photos.id
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
@@ -163,9 +183,11 @@ let fetch = async (endpoint, cb) => {
 	// Finally, execute the query and send back the results
 	try {
 		console.log('QUERY STRING WAS:', query);
-		const { rows } = await client.query(queryString);
-		// const { rows } = await client.query(query);
+		
+		const { rows } = await pool.query(query);
+		
 		//console.log('QUERY STRING RESULT: ', rows);
+		
 		if (table === 'answers') {
 			cb(null,  rows[0]);
 		} else {
