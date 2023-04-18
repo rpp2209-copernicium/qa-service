@@ -112,6 +112,33 @@ let fetch = async (endpoint, cb) => {
 	) results
 	`;
 
+  // TEMP - COMPARE SPEED BEFORE INDEXING / OPTIMIZING TO O.G. A QUERY ABOVE 
+	// Query optimizations made: 
+	// 1. Reduced the size of my data set by filtering answers by question ID 
+		// **before building final JSON object. 
+	// 2. Removed extraneous aggregate calculations (had an extra json_agg that wasn't necessary)
+	
+	// Potential future optimization: GROUP BY strictly necessary? Look into eliminating that condition
+	const temp = `SELECT a.answer_id, 
+		json_build_object(
+			'answer_id', a.answer_id,
+			'body', a.answer_body,
+			'date', a.answer_date,
+			'answerer_name', a.answerer_name,
+			'helpfulness', a.answer_helpfulness,
+			'photos', ( SELECT 
+					JSON_AGG(
+						json_build_object('id', ap.id, 'url', ap.url) 
+						FROM answers_photos ap 
+						WHERE ap.id = a.answer_id
+					) 
+				)				
+		) results
+	  FROM ( SELECT * FROM answers WHERE question_id=${question_id} ) a
+		GROUP BY a.answer_id,
+	  ${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
+	`;
+	
 	// ✅ QUESTIONS QUERY STRING
 	const qIDQuery = `
 		SELECT DISTINCT on (questions.question_id) questions.question_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
@@ -145,6 +172,15 @@ let fetch = async (endpoint, cb) => {
 		`${aQuery}`
 		: `${ !product_id ? `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` : `${qIDQuery}`}`
 	);
+<<<<<<< HEAD
+=======
+
+	const queryString = `SELECT * FROM questions
+		LEFT JOIN answers on questions.question_id=answers.question_id
+		LEFT JOIN answers_photos on answers.answer_id=answers_photos.answer_id
+		WHERE questions.product_id='${product_id}'
+		LIMIT ${count} OFFSET ${(page - 1) * count}
+	`;
 	
 	// Finally, execute the query and send back the results
 	try {
@@ -156,9 +192,7 @@ let fetch = async (endpoint, cb) => {
 		}
 	} catch (err) {
 		cb(err);
-	} // finally {
-	//	client.release(); // Release connection back to the pool
-	//}
+	}
 };
 
 // PUT REQUESTS (Report a Question/Answer or mark it Helpful)
