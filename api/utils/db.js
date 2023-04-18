@@ -104,16 +104,17 @@ let fetch = async (endpoint, cb) => {
 	// 2. Removed extraneous aggregate calculations (had an extra json_agg that wasn't necessary)
 	
 	// Potential future optimization: GROUP BY strictly necessary? Look into eliminating that condition
-	const aQuery = `SELECT a.answer_id, 
-			json_build_object(
-				'answer_id', a.answer_id,
-				'body', a.answer_body,
-				'date', a.answer_date,
-				'answerer_name', a.answerer_name,
-				'helpfulness', a.answer_helpfulness,
-				'photo', (SELECT JSON_AGG(json_build_object('id', ap.id, 'url', ap.url)) FROM answers_photos ap WHERE ap.answer_id=a.answer_id
-			)
-		) results FROM (SELECT * FROM answers WHERE question_id=${question_id}) a
+	const aQuery = `SELECT 
+			a.answer_id answer_id,
+			a.answer_body body,
+			a.answer_date date,
+			a.answerer_name answerer_name,
+			a.answer_helpfulness helpfulness,
+			(SELECT JSON_AGG(
+				json_build_object('id', ap.id, 'url', ap.url)
+			) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
+			
+		FROM (SELECT * FROM answers WHERE question_id=${question_id}) a
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
 
