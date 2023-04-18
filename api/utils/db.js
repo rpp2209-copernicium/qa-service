@@ -112,7 +112,7 @@ let fetch = async (endpoint, cb) => {
 	) results
 	`;
 
-  // TEMP - COMPARE SPEED BEFORE INDEXING / OPTIMIZING TO O.G. A QUERY ABOVE 
+ 	// TEMP - COMPARE SPEED BEFORE INDEXING / OPTIMIZING TO O.G. A QUERY ABOVE 
 	// Query optimizations made: 
 	// 1. Reduced the size of my data set by filtering answers by question ID 
 		// **before building final JSON object. 
@@ -172,8 +172,6 @@ let fetch = async (endpoint, cb) => {
 		`${aQuery}`
 		: `${ !product_id ? `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` : `${qIDQuery}`}`
 	);
-<<<<<<< HEAD
-=======
 
 	const queryString = `SELECT * FROM questions
 		LEFT JOIN answers on questions.question_id=answers.question_id
@@ -185,9 +183,14 @@ let fetch = async (endpoint, cb) => {
 	// Finally, execute the query and send back the results
 	try {
 		console.log('QUERY STRING WAS:', query);
+		
 		const { rows } = await pool.query(query);
+		
 		//console.log('QUERY STRING RESULT: ', rows);
+		
 		if (table === 'answers') {
+			cb(null,  rows[0]);
+		} else {
 			cb(null,  rows);
 		}
 	} catch (err) {
