@@ -77,20 +77,20 @@ let fetch = async (endpoint, cb) => {
 	//           Build up the Queries...
 	// =============================================
 	// ✅ ANSWERS QUERY STRING
-	const aQuery = `SELECT answers.answer_id, 
+	const aQuery = `SELECT a.answer_id, 
                 
 		json_build_object(
-                        'answer_id', answers.answer_id,
-                        'body', answers.answer_body,
-                        'date', answers.answer_date,
-                        'answerer_name', answers.answerer_name,
-                        'helpfulness', answers.answer_helpfulness,
-                        'photos', JSON_AGG(json_build_object('id', answers_photos.id, 'url', answers_photos.url))
-
-                ) results FROM answers
-		LEFT JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
+                        'answer_id', a.answer_id,
+                        'body', a.answer_body,
+                        'date', a.answer_date,
+                        'answerer_name', a.answerer_name,
+                        'helpfulness', a.answer_helpfulness,
+			'photo', (SELECT JSON_AGG(json_build_object('id', ap.id, 'url', ap.url))
+                                   FROM answers_photos ap WHERE ap.answer_id=a.answer_id
+			         )
+                ) results FROM answers a
                 WHERE question_id=${question_id}
-                GROUP BY answers.answer_id
+                GROUP BY a.answer_id
                 ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
 	`;
 	
