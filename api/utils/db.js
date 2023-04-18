@@ -31,16 +31,18 @@ let pgPool = new Pool({ connectionString: dbString });
 
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
-	// console.log('Fetching ENDPOINT from DB: ', endpoint);
+	console.log('Fetching ENDPOINT from DB: ', endpoint);
 	const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
 	let page = 1;
 
 	// Check the endpoint and do some variable setting based on its value
-	const answerRegex = /^\/questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
-	const urlRegex = /^(\/questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
+	const answerRegex = /^questions\/(\d+)\/(answers)(?:\?count=(\d+))?(?:&page=(\d+))?/i;
+	const urlRegex = /^(questions)(?:\?product_id=(\d+))?(?:&count=(\d+))?(?:&page=(\d+))?/i;
+	console.log('TESTING ANSWERS REGEX: ', endpoint.match(answerRegex));
 
+	console.log('TESTING URL REGEX: ', endpoint.match(urlRegex));
 	// If request was made for answers, set Answer variables
 	if (endpoint.match(answerRegex)) {
 		match = endpoint.match(answerRegex);
