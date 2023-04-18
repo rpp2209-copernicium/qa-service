@@ -18,13 +18,12 @@ let dbString = `postgres://admin:sdc@${DB_HOST}:5432/qa`;
 // =============================================
 //            Postgres Pool Set Up
 // =============================================
-let pgPool = new Pool({ connectionString: dbString });
-pgPool.connect();
+let pool = new Pool({ connectionString: dbString });
+pool.connect();
 
 // GET REQUESTS (Get a Product's Questions, a Question's Answers, or an Answer's Photos)
 let fetch = async (endpoint, cb) => {
 	console.log('Fetching ENDPOINT from DB: ', endpoint);
-	const client = await pgPool.connect();
 	let table, question_id, product_id, match;
 	let count = 5; 
 	let page = 1;
@@ -57,54 +56,19 @@ let fetch = async (endpoint, cb) => {
 	} else {
 		match = 'no match'; // set error string if no match found
 	}
-	// Check Regex grabbed the right variable values
-	console.log('REGEX Matched: ', match);
-	console.log('Extracted-- table is: ', table, '\nquestion_id or pid?', question_id, product_id, '\npage', page, 'count', count);
+	// Confirm the Regex grabbed expected values
+	// console.log('REGEX Matched: ', match);
+	console.log('Database Table: ', table, 
+	  '\nquestion_id or pid?', question_id, product_id, 
+		'\npage', page, 
+		'count', count
+	);
 
 	// =============================================
 	//           Build up the Queries...
 	// =============================================
 	// ✅ ANSWERS QUERY STRING
-	const aQueryOLD = `
-		SELECT json_agg(results) answers FROM (
-			SELECT json_build_object(
-				'answer_id', answers.answer_id,
-				'body', answer_body,
-				'date', answer_date,
-				'answerer_name', answerer_name,
-				'helpfulness', answer_helpfulness,
-				'photos', JSON_AGG(json_build_object('id', answers_photos.id, 'url', answers_photos.url))
-			) results FROM answers
-			JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
-			WHERE question_id=${question_id}
-			GROUP BY question_id, answers.answer_id, answers_photos.id
-			${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
-		) results
-	`;
-
-	const aQueryOldTwo = `SELECT a.answer_id, 
-		json_build_object(
-				'answer_id', a.answer_id,
-				'body', a.answer_body,
-				'date', a.answer_date,
-				'answerer_name', a.answerer_name,
-				'helpfulness', a.answer_helpfulness,
-				'photo', (SELECT JSON_AGG(json_build_object('id', ap.id, 'url', ap.url))
-									FROM answers_photos ap WHERE ap.answer_id=a.answer_id
-			)
-		) results FROM answers a
-		WHERE question_id=${question_id}
-		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
-	`;
-	
- 	// TEMP - COMPARE SPEED BEFORE INDEXING / OPTIMIZING TO O.G. A QUERY ABOVE 
-	// Query optimizations made: 
-	// 1. Reduced the size of my data set by filtering answers by question ID 
-		// **before building final JSON object. 
-	// 2. Removed extraneous aggregate calculations (had an extra json_agg that wasn't necessary)
-	
-	// Potential future optimization: GROUP BY strictly necessary? Look into eliminating that condition
-	const aQuery = `SELECT 
+	const answers = `SELECT 
 			a.answer_id answer_id,
 			a.answer_body body,
 			a.answer_date date,
@@ -117,53 +81,52 @@ let fetch = async (endpoint, cb) => {
 		FROM (SELECT * FROM answers WHERE question_id=${question_id}) a
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
-
+	
+	// =============================================
 	// ✅ QUESTIONS QUERY STRING
-	const qIDQuery = `
-		SELECT DISTINCT on (questions.question_id) questions.question_id, questions.question_body, questions.question_date, questions.asker_name, questions.question_helpfulness, questions.reported,
+	const questions = `SELECT 
+			q.question_id question_id,
+			q.question_body,
+			q.question_date,
+			q.asker_name,
+			q.question_helpfulness,
+			q.reported,
+			
+			(SELECT JSON_AGG(
+				json_build_object(
+					a.answer_id,
 
-		json_build_object(
-			"id",
+					json_build_object(
+						'id', a.answer_id,
+						'body', a.answer_body,
+						'date', a.answer_date,
+						'answerer_name', a.answerer_name,
+						'helpfulness', a.answer_helpfulness,
+						'photos', (SELECT JSON_AGG(ap.url) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
+					)
 
-			json_build_object(
-				'id', answers.answer_id,
-				'body', answer_body,
-				'date', answer_date,
-				'answerer_name', answerer_name,
-				'helpfulness', answer_helpfulness,
-				'photos', JSON_AGG(answers_photos.url)
-			)
-
-		) answers FROM questions
-
-		JOIN answers ON answers.question_id=questions.question_id
-		JOIN answers_photos ON answers_photos.answer_id=answers.answer_id
-		${ !product_id ? '' : `WHERE questions.product_id='${product_id}'`}
-		GROUP BY questions.question_id, answers.answer_id, answers_photos.id
-		${`LIMIT ${count} OFFSET ${count * (page - 1)}`}
+				) 
+			) answers FROM answers a WHERE a.question_id=q.question_id)	
+		FROM (SELECT * FROM questions WHERE product_id='${product_id}') q
+		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
 
 	// =============================================
-	//          FINAL/AGGREGATED Q STRINGS
-	// =============================================
-	// If table is answers, run Answers query, else run Questions query
+	// ✨ FINAL/AGGREGATED Q STRINGS
 	const query = (table === 'answers' ?
-		`${aQuery}`
-		: `${ !product_id ? `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` : `${qIDQuery}`}`
+			`${answers}` // If table is answers then run the Answers query
+			: `${ product_id ? 
+			`${questions}` // ELSE run Questions query
+			: `SELECT * FROM questions ${`LIMIT ${count} OFFSET ${count * (page - 1)}`}` // ELSE, just get the first 15 questions
+		}`
 	);
 
 	// Finally, execute the query and send back the results
 	try {
 		console.log('QUERY STRING WAS:', query);
-		const { rows } = await pgPool.query(query);
-		// const { rows } = await client.query(query);
+		const { rows } = await pool.query(query);
 		console.log('QUERY STRING RESULT: ', rows);
 		cb(null,  rows);
-		// if (table === 'answers') {
-		// 	cb(null,  rows[0]);
-		// } else {
-		// 	cb(null,  rows);
-		// }
 	} catch (err) {
 		cb(err);
 	}
@@ -183,7 +146,7 @@ let update = async (endpoint, body, cb) => {
 	try {
 		// console.log('UPDATE Q String: ', query);
 		// console.log('Sum BEFORE: ', nextSum - 1, 'After: ', nextSum);
-		const { rows } = await pgPool.query(query);
+		const { rows } = await pool.query(query);
 		cb(null, rows);
 	} catch (err) {
 		cb(err);
@@ -210,7 +173,7 @@ let save = async (table, qaObj, cb) => {
 
 	try {
 		// console.log('INSERT String', query);
-		const { rows } = await pgPool.query(query);
+		const { rows } = await pool.query(query);
 		cb(null, rows);
 
 	} catch (err) {
@@ -225,7 +188,7 @@ let fetchRowCount = async (table, cb) => {
 
 	try {
 		// console.log('Fetch ROW COUNT Query String: ', query);
-		const { rows } = await pgPool.query(query);
+		const { rows } = await pool.query(query);
 		console.log('ROW COUNT RESULT', rows);
 		cb(null, rows);
 
