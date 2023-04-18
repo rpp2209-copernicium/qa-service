@@ -8,7 +8,8 @@ set -e
 
 # Populate the questions, answers, and answers_photos database tables
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-	\c qa;# 	\dt;
+	\c qa; 	
+	\dt;
 
 	\copy questions(question_id, product_id, question_body, question_date, asker_name, asker_email, reported, question_helpfulness) FROM 'questions.csv' DELIMITER ',' CSV HEADER;
 
