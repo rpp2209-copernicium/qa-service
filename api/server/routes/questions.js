@@ -4,10 +4,11 @@ const axios = require('axios');
 
 const { fetch, save, update  } = require('../../utils/db.js');
 
-// ❓🤨 List Questions (Returns Loaded Questions, Excludes Newly Inserted Qs for some reason ())
+
 // =============================================
 //                Questions
 // =============================================
+// ✅ GET Questions
 // GET /qa/questions
 // Parameters: product_id (int), page (int), count (int)
 router.get('/questions', async (req, res) => {
@@ -70,6 +71,8 @@ router.put('/questions/:question_id/helpful', (req, res) => {
 // PUT /qa/questions/:question_id/report
 // Parameters: question_id
 router.put('/questions/:question_id/report', async (req, res) => {
+	console.log('QA MS RPT QS URL: ', req.url);
+	
 	await update('reported', { id: req.params['question_id'], value: true }, (err, payload) => {
 		if (err) {
 			console.log('Report Question Error: ', err);
@@ -84,11 +87,9 @@ router.put('/questions/:question_id/report', async (req, res) => {
 // =============================================
 //                Answers
 // =============================================
-// ✅ Answers List
+// ✅ GET Answers
 // GET /qa/questions/:question_id/answers
-
-//  Parameters: question_id
-// Query Parameters: page, count
+// Parameters: question_id, page, count
 router.get('/questions/:question_id/answers', (req, res) => {
 	let url = req.url.slice(1);
   fetch(url, (err, payload) => {
@@ -102,12 +103,11 @@ router.get('/questions/:question_id/answers', (req, res) => {
 	});
 });
 
-// Add an Answer
+// ✅ Add an Answer
 // POST /qa/questions/:question_id/answers
+// Parameters: question_id, body, name, email, photos
 router.post('/questions/:question_id/answers', async (req, res) => {
-	// Parameters: question_id
-	// Body Parameters: body, name, email, photos
-	console.log('GOT Create A BODY', req.body);
+	// console.log('GOT Create A BODY', req.body);
 
 	const answer = {
 		answer_body: req.body.answer_body,
@@ -129,17 +129,19 @@ router.post('/questions/:question_id/answers', async (req, res) => {
 
 // Mark Answer as Helpful
 // PUT /qa/answers/:answer_id/helpful
+// Parameters: answer_id
 router.put('/answers/:answer_id/helpful', async (req, res) => {
-	// Parameters: answer_id
+
 	await update('helpful', { id: req.params['answer_id'], table: 'answers' }, (err, payload) => {
 		if (err) {
 			console.log('Report A Helpful Err', err);
 			res.status(500).send(err);
 		} else {
 			console.log('Report A HELPFUL SUCCESS: ', payload);
-			res.status(204).send('NO CONTENT'); // Expected Status: 204 NO CONTENT
+			res.status(204).send('NO CONTENT'); 
 		}
 	});
+	
 });
 
 // Report Answer

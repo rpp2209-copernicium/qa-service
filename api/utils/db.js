@@ -68,6 +68,7 @@ let fetch = async (endpoint, cb) => {
 			a.answer_date date,
 			a.answerer_name answerer_name,
 			a.answer_helpfulness helpfulness,
+			a.reported,
 			(SELECT JSON_AGG(
 				json_build_object('id', ap.id, 'url', ap.url)
 			) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
@@ -131,15 +132,21 @@ let fetch = async (endpoint, cb) => {
 //				Mark Q or A Reported / Helpful
 // =============================================
 let update = async (endpoint, body, cb) => {
-	
+	console.log('In Update DB Func, ep is: ', endpoint);
+
 	// Set Update Column based on which table was passed to the update function 
 	let table = body.table || 'questions';
-	let col = (endpoint === 'helpful' && table === 'answers') ? "answer_helpfulness"
-	  : (table === 'questions') ? "question_helpfulness"
+	console.log('TABLE IS: ', table);
+
+	let col = (endpoint === 'helpful' && table === 'answers') 
+		? "answer_helpfulness"
+	  : (table === 'questions' && endpoint === 'helpful') ? "question_helpfulness"
 		: "reported";
 
+		console.log('In Update DB Func, ep is: ', endpoint, '\n column is: ', col);
+
 	// Get the current helpfulness value, so it can be incremented
-	const { rows } = await client.query(`
+	const { rows } = await pool.query(`
 		SELECT ${col} 
 		FROM ${table} 
 		WHERE ${table === 'answers' ? 'answer_id' : 'question_id'}=${body.id}
@@ -147,6 +154,7 @@ let update = async (endpoint, body, cb) => {
 
 	// Increment the current helpfulness
 	const nextSum = rows[0][col] + 1;
+	console.log('NEXT SUM IS:', nextSum);
 
 	// If updating Q or A helpfulness
 	// Set the current database helpfulness value to `nextSum`
@@ -178,7 +186,8 @@ let update = async (endpoint, body, cb) => {
 //			Submit a new Question or Answer
 // =============================================
 let save = async (table, qaObj, cb) => {
-	
+	// console.log('IN DB SAVE', qaObj);
+
 	// Build the query string depending on which table was passed into the function
 	const query = (table === 'questions') ? `
 		INSERT INTO ${table}("product_id", "question_body", "question_date", "asker_name", "asker_email", "question_helpfulness", "reported")
