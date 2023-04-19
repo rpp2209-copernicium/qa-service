@@ -146,8 +146,9 @@ router.put('/answers/:answer_id/helpful', async (req, res) => {
 
 // Report Answer
 // PUT /qa/answers/:answer_id/report
+// Parameters: answer_id
 router.put('/answers/:answer_id/report', async (req, res) => {
-	// Parameters: answer_id
+	
 	await update('reported', { table: 'answers', id: req.params['answer_id'], value: true }, (err, payload) => {
 		if (err) {
 			console.log('Report A Error: ', err);

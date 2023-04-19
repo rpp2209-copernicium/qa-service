@@ -132,9 +132,9 @@ let fetch = async (endpoint, cb) => {
 //				Mark Q or A Reported / Helpful
 // =============================================
 let update = async (endpoint, body, cb) => {
-	console.log('In Update DB Func, ep is: ', endpoint);
 
-	// Set Update Column based on which table was passed to the update function 
+	// Set Update Column to 'reported' or 'helpfulness' 
+	// dependent on which table was passed to the update function 
 	let table = body.table || 'questions';
 	console.log('TABLE IS: ', table);
 
@@ -142,8 +142,6 @@ let update = async (endpoint, body, cb) => {
 		? "answer_helpfulness"
 	  : (table === 'questions' && endpoint === 'helpful') ? "question_helpfulness"
 		: "reported";
-
-		console.log('In Update DB Func, ep is: ', endpoint, '\n column is: ', col);
 
 	// Get the current helpfulness value, so it can be incremented
 	const { rows } = await pool.query(`
@@ -154,7 +152,6 @@ let update = async (endpoint, body, cb) => {
 
 	// Increment the current helpfulness
 	const nextSum = rows[0][col] + 1;
-	console.log('NEXT SUM IS:', nextSum);
 
 	// If updating Q or A helpfulness
 	// Set the current database helpfulness value to `nextSum`
@@ -170,10 +167,10 @@ let update = async (endpoint, body, cb) => {
 	`;
 
 	try {
-		console.log('UPDATE Q String: ', query);
+		// console.log('UPDATE Q String: ', query);
 		// console.log('Sum BEFORE: ', nextSum - 1, 'After: ', nextSum);
 		const { rows } = await pool.query(query);
-		console.log('DB PUT/UPDATE RESULT: ', rows);
+		// console.log('DB PUT/UPDATE RESULT: ', rows);
 		cb(null, rows);
 	} catch (err) {
 		cb(err);
