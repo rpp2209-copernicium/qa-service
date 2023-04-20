@@ -1,15 +1,10 @@
 import http from 'k6/http';
-// K6 Provided Functions: check(), sleep() -- sleep takes arg in seconds only (no ms)
-import { check, sleep } from 'k6';
+import { check, sleep } from 'k6'; // sleep takes arg in seconds only (no ms)
 
-// EXAMPLE WITHOUT STAGES
-// export const options = {
-//   vus: 10,
-//   duration: '30s',
-// };
+http.setResponseCallback(http.expectedStatuses({ min: 200, max: 300 }));
 
-// EXAMPLE WITH STAGES
-// export const options = {
+// Smoke Test - Test Minimal Load
+// export const smokeTest_options = {
 //   stages: [
 //     { duration: '30s', target: 20 },
 //     { duration: '1m30s', target: 10 },
@@ -17,78 +12,103 @@ import { check, sleep } from 'k6';
 //   ],
 // };
 
-// Smoke Test
-// Test Minimal Load
-export const smokeTest_options = {
-  // stages: [
-  //   { duration: '30s', target: 20 },
-  //   { duration: '1m30s', target: 10 },
-  //   { duration: '20s', target: 0 },
-  // ],
-};
+// Performance Test - Test Normal Load
+// export const loadTest_options = {
+//   stages: [
+//     { duration: '30s', target: 20 },
+//     { duration: '1m30s', target: 10 },
+//     { duration: '20s', target: 0 },
+//   ],
+// };
 
-// Performance Test
-// Test Normal Load
-export const loadTest_options = {
-  // stages: [
-  //   { duration: '30s', target: 20 },
-  //   { duration: '1m30s', target: 10 },
-  //   { duration: '20s', target: 0 },
-  // ],
-};
+// Stress Test - Test under Extreme Conditions
+// export const options = {
+//   vus: 10,
+//   duration: '30s'
+// }
 
-// Stress Test
-// Test under Extreme Conditions
+// Soak Test - Test Reliability Over a Longer Period of Time
+// export const soakTest_options = {
+//   stages: [
+//     { duration: '30s', target: 20 },
+//     { duration: '1m30s', target: 10 },
+//     { duration: '20s', target: 0 },
+//   ],
+// };
+
 export const options = {
+  discardResponseBodies: true,
+
+  thresholds: {
+    http_req_duration: ['p(95)<50'], // allow up to <=50ms latency
+    http_req_failed: ['rate<0.01'], // http errors should be less than 1%
+    checks: ['rate>0.99'],
+  },
+
   scenarios: {
+
     stress: {
-      executor: "ramping-arrival-rate",
-      preAllocatedVUs: 500,
-      timeUnit: "1s",
+      executor: 'ramping-arrival-rate',
+      startRate: 1,
+      timeUnit: '1s',
+      preAllocatedVUs: 60,
+
       stages: [
-        { duration: "2m", target: 10 }, // below normal load
-        { duration: "5m", target: 10 },
-        { duration: "2m", target: 20 }, // normal load
-        { duration: "5m", target: 20 },
-        { duration: "2m", target: 30 }, // around the breaking point
-        { duration: "5m", target: 30 },
-        { duration: "2m", target: 40 }, // beyond the breaking point
-        { duration: "5m", target: 40 },
-        { duration: "10m", target: 0 }, // scale down. Recovery stage.
+        { duration: "10s", target: 1  },
+        { duration: "20s", target: 5  },
+        { duration: "10s", target: 1  },
+        { duration: "20s", target: 0 }, // scale down. Recovery stage.
       ],
+
     },
   },
+
 };
 
-// Soak Test
-// Test Reliability Over a Longer Period of Time
-export const soakTest_options = {
-  // stages: [
-  //   { duration: '30s', target: 20 },
-  //   { duration: '1m30s', target: 10 },
-  //   { duration: '20s', target: 0 },
-  // ],
-};
-
-// Test k6 works before dropping in QA API
+// QA Service API
+// Load Test QA Perfomance Locally (No Nginx, No EC2, No Legacy Endpoints)
 export default function () {
-  const BASE_URL = "https://test-api.k6.io"; // make sure this is not production
-  const responses = http.batch([
-    ["GET", `${BASE_URL}/public/crocodiles/1/`],
-    ["GET", `${BASE_URL}/public/crocodiles/2/`],
-    ["GET", `${BASE_URL}/public/crocodiles/3/`],
-    ["GET", `${BASE_URL}/public/crocodiles/4/`],
-  ]);
+  
+  const BASE_URL = 'http://localhost:8080/qa/questions';
+
+  // Generate a random number between min and max:
+  // Math.random() * (max - min) + min
+  let min = 99999;
+  let max = 999999;
+  let id = Math.floor(Math.random() * (max - min) + min);
+  let res = http.get(BASE_URL + `?product_id=${id}`);
+
+  console.log(`Response Time: ${String(res.timings.duration)} ms \n| URL was: ${String(res.url)}`);
+    
+    // for (let i = 99999; i <= 999999; id++) {
+    //   res = http.get(BASE_URL + `?product_id=${id}`);
+
+    //   console.log(`Response Time: ${String(res.timings.duration)} ms
+    //     \n| Errors: ${String(res.error)}
+    //     \n| URL was: ${String(res.url)}
+    //     \n| Status Text: ${String(res.status_text)}
+    //   `);
+    // }
+
 }
 
-// QA Service API (TODO)
-export default function () {
-  const BASE_URL = 'http://localhost:3000/qa/questions';
-  const responses = http.batch([
-    ["GET", /* REAL API TODO */],
-    ["GET", /* REAL API TODO */],
-    ["GET", /* REAL API TODO */],
-    ["GET", /* REAL API TODO */],
-  ]);
-}
-
+// =============================================
+//            Response Object Keys
+// =============================================
+// remote_ip,
+// remote_port,
+// url,
+// status,
+// status_text,
+// proto,
+// headers,
+// cookies,
+// body, 
+// timings, 
+// tls_version, 
+// tls_cipher_suite,
+// ocsp,
+// error,
+// error_code,
+// request,
+// getCtx
