@@ -8,8 +8,3 @@ postgres/data/
 .DS_Store
 */.DS_Store
 .env
-
-# ignore newrelic files
-newrelic.js
-newrelic_agent.log
-
