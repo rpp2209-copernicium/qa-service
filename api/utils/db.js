@@ -71,12 +71,31 @@ let fetch = async (endpoint, cb) => {
 			a.reported,
 			(SELECT JSON_AGG(
 				json_build_object('id', ap.id, 'url', ap.url)
-			) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
+			) photos FROM (SELECT * FROM answers_photos WHERE answers_photos.answer_id=a.answer_id) ap)
 			
 		FROM (SELECT * FROM answers WHERE question_id=${question_id}) a
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
+
+	// Before adding extra SELECT
+	// const answersOld = `SELECT 
+	// 		a.answer_id answer_id,
+	// 		a.answer_body body,
+	// 		a.answer_date date,
+	// 		a.answerer_name answerer_name,
+	// 		a.answer_helpfulness helpfulness,
+	// 		a.reported,
+	// 		(SELECT JSON_AGG(
+	// 			json_build_object('id', ap.id, 'url', ap.url)
+	// 		) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
+			
+	// 	FROM (SELECT * FROM answers WHERE question_id=${question_id}) a
+	// 	${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
+	// `;
 	
+	// Can i index on the order by clause?
+	// Experiment with composing separate queries 
+	// instead of building up data via aggregations in a single query string
 	const questions = `SELECT 
 			q.question_id question_id,
 			q.question_body,
@@ -95,15 +114,44 @@ let fetch = async (endpoint, cb) => {
 						'date', a.answer_date,
 						'answerer_name', a.answerer_name,
 						'helpfulness', a.answer_helpfulness,
-						'photos', (SELECT JSON_AGG(ap.url) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
+						'photos', (SELECT JSON_AGG(ap.url) photos FROM (SELECT * FROM answers_photos WHERE answers_photos.answer_id=a.answer_id) ap)
 					)
 
 				) 
-			) answers FROM answers a WHERE a.question_id=q.question_id)	
+			) answers FROM (SELECT * FROM answers WHERE answers.question_id=q.question_id) a)	
 		FROM (SELECT * FROM questions WHERE product_id='${product_id}') q
 		ORDER BY q.question_id DESC
 		${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
 	`;
+	
+	// Before adding extra SELECT
+	// const questionsOLD = `SELECT 
+	// 		q.question_id question_id,
+	// 		q.question_body,
+	// 		q.question_date,
+	// 		q.asker_name,
+	// 		q.question_helpfulness,
+	// 		q.reported,
+			
+	// 		(SELECT JSON_AGG(
+	// 			json_build_object(
+	// 				a.answer_id,
+
+	// 				json_build_object(
+	// 					'id', a.answer_id,
+	// 					'body', a.answer_body,
+	// 					'date', a.answer_date,
+	// 					'answerer_name', a.answerer_name,
+	// 					'helpfulness', a.answer_helpfulness,
+	// 					'photos', (SELECT JSON_AGG(ap.url) photos FROM answers_photos ap WHERE ap.answer_id=a.answer_id)
+	// 				)
+
+	// 			) 
+	// 		) answers FROM answers a WHERE a.question_id=q.question_id)	
+	// 	FROM (SELECT * FROM questions WHERE product_id='${product_id}') q
+	// 	ORDER BY q.question_id DESC
+	// 	${`LIMIT ${count} OFFSET ${count * (page - 1)}`} 
+	// `;
 
 	// =============================================
 	// ✨ FINAL/AGGREGATED Q STRINGS

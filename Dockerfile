@@ -1,8 +1,6 @@
 # pull the Node image from Docker
 FROM node:alpine
 
-#ENV NEW_RELIC_NO_CONFIG_FILE=true
-
 # Install K6
 WORKDIR /tmp
 
@@ -12,9 +10,6 @@ RUN tar -xzf k6-v0.31.0-linux64.tar.gz
 
 RUN mv k6-v0.31.0-linux64/k6 /usr/bin/k6
 
-# set the current working directory
-WORKDIR /api
-
 # copy package.json
 COPY package*.json .
 COPY .env .
@@ -22,7 +17,8 @@ COPY .env .
 # install deps
 RUN npm i
 
-# copy the db data to the container
+# copy the db data and New Relic Config to the container
+COPY newrelic.js .
 COPY ./api .
 
 # ports are already mapped in compose YAML file
@@ -33,7 +29,5 @@ EXPOSE 8080
 # EXPOSE 8082
 
 # start the server and listen for any changes
+# CMD ["npm", "run", "nr"]
 CMD ["npm", "start"]
-
-
-
