@@ -1,94 +1,94 @@
 import http from 'k6/http';
-// K6 Provided Functions: check(), sleep() -- sleep takes arg in seconds only (no ms)
-import { check, sleep } from 'k6';
+import { check, sleep } from 'k6'; // sleep takes arg in seconds only (no ms)
 
-// EXAMPLE WITHOUT STAGES
-// export const options = {
-//   vus: 10,
-//   duration: '30s',
-// };
+http.setResponseCallback(http.expectedStatuses({ min: 200, max: 300 }));
 
-// EXAMPLE WITH STAGES
-// export const options = {
-//   stages: [
-//     { duration: '30s', target: 20 },
-//     { duration: '1m30s', target: 10 },
-//     { duration: '20s', target: 0 },
-//   ],
-// };
-
-// Smoke Test
-// Test Minimal Load
-export const smokeTest_options = {
-  // stages: [
-  //   { duration: '30s', target: 20 },
-  //   { duration: '1m30s', target: 10 },
-  //   { duration: '20s', target: 0 },
-  // ],
-};
-
-// Performance Test
-// Test Normal Load
-export const loadTest_options = {
-  // stages: [
-  //   { duration: '30s', target: 20 },
-  //   { duration: '1m30s', target: 10 },
-  //   { duration: '20s', target: 0 },
-  // ],
-};
-
-// Stress Test
-// Test under Extreme Conditions
 export const options = {
+  discardResponseBodies: true,
+
+  thresholds: {
+    http_req_duration: ['p(95)<50'], // allow up to <=50ms latency
+    http_req_failed: ['rate<0.01'], // http errors should be less than 1%
+    checks: ['rate>0.99'],
+  },
+
   scenarios: {
-    stress: {
-      executor: "ramping-arrival-rate",
-      preAllocatedVUs: 500,
-      timeUnit: "1s",
+
+    qStress: {
+      executor: 'ramping-arrival-rate',
+
+      startRate: 10,
+      timeUnit: '1s',
+      gracefulStop: '60s',
+
+      // GET Q's Config
+      preAllocatedVUs: 325,
+      maxVUs: 500,
       stages: [
-        { duration: "2m", target: 10 }, // below normal load
-        { duration: "5m", target: 10 },
-        { duration: "2m", target: 20 }, // normal load
-        { duration: "5m", target: 20 },
-        { duration: "2m", target: 30 }, // around the breaking point
-        { duration: "5m", target: 30 },
-        { duration: "2m", target: 40 }, // beyond the breaking point
-        { duration: "5m", target: 40 },
-        { duration: "10m", target: 0 }, // scale down. Recovery stage.
+        { duration: "5s", target: 10  },
+
+        { duration: "5s", target: 100 },
+        { duration: "10s", target: 250 },
+
+        { duration: "5s", target: 450  },
+        { duration: "10s", target: 750 },
+        { duration: "5s", target: 450 },
+
+        { duration: "5s", target: 250  },
+        { duration: "10s", target: 100 },
+
+        { duration: "5s", target: 10 },
+        { duration: "10s", target: 0 }, // scale down. Recovery stage.
       ],
     },
   },
-};
 
-// Soak Test
-// Test Reliability Over a Longer Period of Time
-export const soakTest_options = {
-  // stages: [
-  //   { duration: '30s', target: 20 },
-  //   { duration: '1m30s', target: 10 },
-  //   { duration: '20s', target: 0 },
-  // ],
-};
+  aStress: {
+    executor: 'ramping-arrival-rate',
 
-// Test k6 works before dropping in QA API
-export default function () {
-  const BASE_URL = "https://test-api.k6.io"; // make sure this is not production
-  const responses = http.batch([
-    ["GET", `${BASE_URL}/public/crocodiles/1/`],
-    ["GET", `${BASE_URL}/public/crocodiles/2/`],
-    ["GET", `${BASE_URL}/public/crocodiles/3/`],
-    ["GET", `${BASE_URL}/public/crocodiles/4/`],
-  ]);
+    startRate: 10,
+    timeUnit: '1s',
+    gracefulStop: '60s',
+    preAllocatedVUs: 375,
+    maxVUs: 500,
+    stages: [
+      { duration: "5s", target: 10  },
+
+      { duration: "5s", target: 600 },
+      { duration: "10s", target: 1100 },
+
+      { duration: "5s", target: 1250  },
+      { duration: "10s", target: 1510 },
+      { duration: "5s", target: 1250 },
+
+      { duration: "5s", target: 1100  },
+      { duration: "10s", target: 600 },
+
+      { duration: "5s", target: 10 },
+      { duration: "10s", target: 0 }, // scale down. Recovery stage.
+    ],
+  },
+
 }
 
-// QA Service API (TODO)
 export default function () {
-  const BASE_URL = 'http://localhost:3000/qa/questions';
-  const responses = http.batch([
-    ["GET", /* REAL API TODO */],
-    ["GET", /* REAL API TODO */],
-    ["GET", /* REAL API TODO */],
-    ["GET", /* REAL API TODO */],
-  ]);
-}
+  const BASE_URL = 'http://localhost:8080/qa/questions';
 
+  // Generate a random number between min and max:
+
+  // GET QUESTIONS min/max
+  // let min = 99999;
+  // let max = 999999;
+
+  // GET ANSWERS min/max
+  let min = 351896;
+  let max = 3518963;
+  let id = Math.floor(Math.random() * (max - min) + min);
+
+  // TEST GET QUESTIONS
+  // let res = http.get(BASE_URL + `?product_id=${id}`);
+
+  // TEST GET ANSWERS
+  let res = http.get(BASE_URL + `/${id}/answers`);
+  //console.log(`Response Time: ${String(res.timings.duration)} ms \n| URL was: ${String(res.url)}`);
+}

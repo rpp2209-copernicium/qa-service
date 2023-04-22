@@ -6,6 +6,7 @@
   "scripts": {
     "pm": "pm2 start api/server/index.js",
     "start": "npx nodemon -L server/index.js",
+    "nr": "node -r newrelic server/index.js",
     "newrelic": "npx nodemon -r newrelic server/index.js NEW_RELIC_APP_NAME=\"QA API\"",
     "test": "jest ./__tests__ --watch --coverage",
     "k6": "k6 run ./__tests__/stress-test.js",
@@ -32,7 +33,6 @@
     "dotenv": "^16.0.3",
     "fs": "^0.0.1-security",
     "jest": "^29.4.3",
-    "newrelic": "^9.15.0",
     "nodemon": "^2.0.20",
     "pg": "^8.10.0"
   }
