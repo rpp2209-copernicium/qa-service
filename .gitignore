@@ -1,10 +1,18 @@
-# ignore nginx container/image
-# was used for learning about docker
-# but not ready to discard it yet
-node_modules/
-postgres/data/
+docker-compose.yml
 
-# ignore config files
+# New Relic
+newrelic.js
+logging.yml
+
+# Node Modules Dir
+node_modules/
+
 .DS_Store
 */.DS_Store
+.DS_Store/*
+
+# Environment Files
 .env
+
+# Seed Files
+postgres/data

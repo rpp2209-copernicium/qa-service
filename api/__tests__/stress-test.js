@@ -41,32 +41,33 @@ export const options = {
         { duration: "10s", target: 0 }, // scale down. Recovery stage.
       ],
     },
-  },
-
-  aStress: {
-    executor: 'ramping-arrival-rate',
-
-    startRate: 10,
-    timeUnit: '1s',
-    gracefulStop: '60s',
-    preAllocatedVUs: 375,
-    maxVUs: 500,
-    stages: [
-      { duration: "5s", target: 10  },
-
-      { duration: "5s", target: 600 },
-      { duration: "10s", target: 1100 },
-
-      { duration: "5s", target: 1250  },
-      { duration: "10s", target: 1510 },
-      { duration: "5s", target: 1250 },
-
-      { duration: "5s", target: 1100  },
-      { duration: "10s", target: 600 },
-
-      { duration: "5s", target: 10 },
-      { duration: "10s", target: 0 }, // scale down. Recovery stage.
-    ],
+    
+    aStress: {
+      executor: 'ramping-arrival-rate',
+  
+      startRate: 10,
+      timeUnit: '1s',
+      gracefulStop: '60s',
+      preAllocatedVUs: 375,
+      maxVUs: 500,
+      stages: [
+        { duration: "5s", target: 10  },
+  
+        { duration: "5s", target: 600 },
+        { duration: "10s", target: 1100 },
+  
+        { duration: "5s", target: 1250  },
+        { duration: "10s", target: 1510 },
+        { duration: "5s", target: 1250 },
+  
+        { duration: "5s", target: 1100  },
+        { duration: "10s", target: 600 },
+  
+        { duration: "5s", target: 10 },
+        { duration: "10s", target: 0 }, // scale down. Recovery stage.
+      ],
+    }
+    
   },
 
 }
