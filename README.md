@@ -1,4 +1,4 @@
-# Backend Microservice with Nginx Load Balancer and Caching Solution (Dockerized)
+# Questions & Answers Microservice
 *This repository contains the code and configuration files for a backend microservice that utilizes Nginx as a load balancer and caching solution to deliver Question & Answer data to the front end of a eCommerce product detail page.*
 
 *The microservice is designed to handle incoming requests, distribute them across multiple backend servers, and leverage caching to improve performance and reduce load on the backend. The microservice is deployed in two Docker containers to AWS EC2 t2.micro instances.*
@@ -30,9 +30,12 @@ Navigate to the repository's root directory and build the Docker images for the 
 cd qa-service
 ```
 
-<!-- docker build -t backend-server:latest backend-server/ -->
 ```
 docker build -t qa-service .
+```
+
+```
+docker build -t postgres-database postgres/
 ```
 
 ```
